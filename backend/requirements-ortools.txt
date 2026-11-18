@@ -1,0 +1,13 @@
+# Optional: OR-Tools vehicle-routing solver for POST /api/v1/logistics/optimize.
+# Without it, /optimize returns 503 with a clear message; the heuristic
+# POST /api/v1/logistics/plan (no extra dependency) still works.
+# Pinned combination below is verified working together (solver tests pass).
+# (An older comment here blamed a protobuf conflict with the
+# google-generativeai SDK; that SDK was removed 2026-11-16 — Gemini now uses
+# plain REST — so ortools 9.15 + protobuf >= 6.33 should install cleanly on a
+# fresh environment. The pins stay because they are the tested combination.)
+ortools==9.14.6206
+protobuf==6.31.1
+# Version note: the solver code is written against the 9.12+ API
+# (AddDimensionWithVehicleCapacity, with a fallback to the older plural name)
+# and works with 9.14 and 9.15.

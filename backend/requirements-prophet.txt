@@ -1,0 +1,5 @@
+# Optional: Prophet forecaster only.
+# Prophet pulls in a heavy CmdStan build; install this file only if you need
+# the Prophet forecaster (GET /api/v1/forecast) or the Prophet-dependent tests.
+# The scikit-learn forecaster (GET /api/v1/forecast/sklearn) works without it.
+prophet>=1.1.6

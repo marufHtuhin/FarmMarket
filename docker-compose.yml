@@ -1,0 +1,48 @@
+# FarmMarket — local demo stack (MySQL + FastAPI + React SPA).
+# Demo defaults only: do NOT use these credentials in production.
+#   docker compose up --build
+#   docker compose exec api python seed_demo.py   # demo users + data
+# App: http://127.0.0.1:8000  |  API docs: http://127.0.0.1:8000/docs
+# MySQL is reachable on the host at 127.0.0.1:3307.
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      # Demo-only credentials for local development. Change before any real use.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-farmmarket_demo}
+      MYSQL_DATABASE: farmmarket_db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    # Build context is the repo root: the Dockerfile builds the React
+    # frontend in a node stage and serves it from the same origin.
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:-farmmarket_demo}@db:3306/farmmarket_db?charset=utf8mb4
+      # Demo-only secret for local development. Set a long random value in production.
+      SECRET_KEY: ${SECRET_KEY:-demo-only-change-me-in-production}
+      HUB_PROFILE: bangladesh
+      # Optional integrations (empty = clearly-labelled fallback mode):
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OSRM_BASE_URL: ${OSRM_BASE_URL:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+volumes:
+  mysql_data:

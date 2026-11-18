@@ -1,0 +1,9 @@
+# Optional: PyTorch vision models only (CPU wheels).
+# The API and the scikit-learn vision baseline run without torch. Install this
+# file only if you want to train or serve the PyTorch transfer-learning models
+# (ai_services/computer_vision/) behind POST /api/v1/vision/assess.
+#
+# Install CPU-only wheels with:
+# pip install --index-url https://download.pytorch.org/whl/cpu -r requirements-ml.txt
+torch>=2.4
+torchvision>=0.19

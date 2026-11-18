@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0C3B2E">
+<title>FARMMARKET — Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['"Hind Siliguri"','Inter','ui-sans-serif','system-ui','sans-serif'],display:['"Sora"','"Hind Siliguri"','Inter','sans-serif']},colors:{brand:{50:'#eef7f0',100:'#d8ecdc',200:'#b3dab9',300:'#7cc08c',400:'#46a05c',500:'#1E7A4C',600:'#17663b',700:'#0C3B2E',800:'#082a20'},accent:'#F2A33C',mint:'#e8f6ec',ink:'#1c2b21',muted:'#6b7a6e',line:'#ece5d3',paper:'#FBF7EF'}}}}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans">
+<header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-line shadow-[0_1px_0_rgba(12,59,46,0.04)]">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-[72px] flex items-center gap-3">
+<a class="flex items-center gap-2.5 no-underline text-brand-700 text-lg sm:text-xl font-display font-extrabold leading-none" href="/"><span class="w-10 h-10 rounded-xl bg-brand-700 grid place-items-center text-[22px] shadow-sm">🌾</span><span>FARM<span class="text-accent">MARKET</span><small class="block text-[11px] text-muted font-sans font-medium mt-0.5" data-i18n="brandTag">মার্কেট ইন্টেলিজেন্স</small></span></a>
+<div class="flex items-center gap-2 ml-auto">
+<button id="langBtn" class="border-2 border-line bg-white rounded-full px-3.5 py-2 text-brand-700 font-bold text-sm shrink-0 hover:border-brand-300 transition" onclick="toggleLanguage()">EN</button>
+<a class="bg-[#eef5ef] text-brand-700 font-bold rounded-full px-4 py-2.5 text-sm no-underline hover:bg-mint transition" href="/" data-i18n="backMarketplace">← মার্কেটপ্লেস</a>
+</div>
+</div>
+</header>
+<main class="max-w-[1180px] mx-auto px-4 sm:px-6 pt-6 sm:pt-7 pb-16">
+<div class="grid lg:grid-cols-[1fr_300px] gap-6 items-center mb-6"><div><span class="inline-block bg-[#fdf3d7] text-[#8a5a12] text-[11px] font-extrabold uppercase tracking-wider rounded-full px-3 py-1" data-i18n="pageKicker">সিদ্ধান্ত সহায়তা</span><h2 class="font-display text-2xl sm:text-[30px] leading-tight font-extrabold mt-2.5 text-brand-700" data-i18n="pageTitle">মার্কেট ইন্টেলিজেন্স</h2><p class="text-muted text-sm mt-2 leading-relaxed" data-i18n="pageSub">দামের পূর্বাভাস, ফসলের গ্রেডিং, পরামর্শ, ডেলিভারি পরিকল্পনা ও ব্যাচের উৎস যাচাই। প্রতিটি ফলাফলে বলা থাকে এটি কীসের ভিত্তিতে এবং কতটা নির্ভরযোগ্য।</p></div><div class="rounded-[24px] overflow-hidden shadow-xl rotate-1"><img src="https://images.unsplash.com/photo-1606923829579-0cb981a83e2e?auto=format&fit=crop&w=800&q=70" alt="Fresh tomatoes and basil" class="w-full h-[150px] lg:h-[170px] object-cover"></div></div>
+<div id="authNote" class="bg-[#fff8e9] border border-[#f4e4bf] text-[#80632d] rounded-2xl px-4 py-3 text-[13px] my-4 hidden" data-i18n="authNote">গ্রেডিং, পরামর্শ ও ডেলিভারি পরিকল্পনার জন্য লগইন প্রয়োজন — প্রথমে <a class="font-bold underline" href="/">মূল পাতা</a> থেকে সাইন ইন করুন।</div>
+<div class="flex gap-2 flex-wrap my-5" id="tabs"></div>
+
+<section class="pane bg-white border border-line rounded-3xl p-5 sm:p-6 card-shadow" id="p-forecast">
+<h3 class="font-display text-xl font-extrabold mb-4 text-brand-700" data-i18n="forecastTitle">দামের পূর্বাভাস</h3>
+<div class="flex gap-2.5 flex-wrap mb-3">
+<select id="fHub" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"></select>
+<select id="fCrop" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"></select>
+<select id="fH" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"><option>4</option><option selected>8</option><option>12</option></select>
+</div>
+<div class="flex gap-2.5 flex-wrap items-center mb-3">
+<label class="text-sm font-bold text-muted" for="fModel" data-i18n="modelLabel">মডেল</label>
+<select id="fModel" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"><option value="prophet">Prophet</option><option value="sklearn">scikit-learn</option></select>
+<button class="flex-1 min-w-[150px] bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-full px-5 py-3.5 transition shadow-sm" id="fGo" data-i18n="forecastBtn">পূর্বাভাস দেখুন</button>
+</div>
+<div id="fOut" class="mt-4"></div>
+<div class="mt-6">
+<h4 class="font-display text-base font-extrabold text-brand-700" data-i18n="hubsMapTitle">ট্রেডিং হাবের মানচিত্র</h4>
+<p class="text-muted text-sm mt-1" data-i18n="hubsMapHint">বাংলাদেশের প্রধান বাজার কেন্দ্রগুলো।</p>
+<div id="fMap" class="map-box mt-3"></div>
+</div>
+</section>
+
+<section class="pane bg-white border border-line rounded-3xl p-5 sm:p-6 card-shadow hidden" id="p-vision">
+<h3 class="font-display text-xl font-extrabold mb-4 text-brand-700" data-i18n="visionTitle">পাকা ও রোগ গ্রেডিং</h3>
+<div class="bg-[#fff8e9] border border-[#f4e4bf] text-[#80632d] rounded-2xl px-4 py-3 text-[13px] mb-4" data-i18n="visionNote">এখনো কোনো প্রশিক্ষিত রোগ শনাক্তকরণ মডেল নেই — মডেল প্রশিক্ষিত না হওয়া পর্যন্ত API 503 দেবে।</div>
+<div class="flex gap-2.5 flex-wrap mb-3"><input id="vFile" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]" type="file" accept="image/*" capture="environment"><input id="vCrop" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink placeholder:text-[#9aa79d] focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]" placeholder="ফসল (যেমন: টমেটো)" data-ph="cropPh"><input id="vPrice" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink placeholder:text-[#9aa79d] focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]" type="number" min="0" step="0.01" placeholder="প্রতি কেজি রেফারেন্স দাম (ঐচ্ছিক)" data-ph="refPricePh"></div>
+<button class="bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-full px-5 py-3.5 transition shadow-sm" id="vGo" data-i18n="assessBtn">ছবি বিশ্লেষণ করুন</button><div id="vOut" class="mt-4"></div>
+</section>
+
+<section class="pane bg-white border border-line rounded-3xl p-5 sm:p-6 card-shadow hidden" id="p-advisor">
+<h3 class="font-display text-xl font-extrabold mb-4 text-brand-700" data-i18n="advisorTitle">আঞ্চলিক ভাষায় চাষ পরামর্শ</h3>
+<div class="flex gap-2.5 flex-wrap mb-3"><select id="aCrop" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"></select><select id="aHub" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"></select><select id="aLang" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"></select></div>
+<textarea id="aReport" class="w-full rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink placeholder:text-[#9aa79d] focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc] min-h-[88px] resize-y" placeholder="বাজার / পণ্য রিপোর্ট এখানে পেস্ট করুন (ইংরেজি)। ঐচ্ছিক: শুধু দামের পূর্বাভাস থেকেও পরামর্শ তৈরি করা যায়।" data-ph="reportPh"></textarea>
+<div class="mt-2.5"><button class="bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-full px-5 py-3.5 transition shadow-sm" id="aGo" data-i18n="adviceBtn">পরামর্শ নিন</button></div><div id="aOut" class="mt-4"></div>
+</section>
+
+<section class="pane bg-white border border-line rounded-3xl p-5 sm:p-6 card-shadow hidden" id="p-logistics">
+<h3 class="font-display text-xl font-extrabold mb-4 text-brand-700" data-i18n="logisticsTitle">ডেলিভারি পরিকল্পনা (সময় + কার্বন + তাজা)</h3>
+<p class="text-muted text-[13px] mb-3" data-i18n="logisticsHint">সিনারিও JSON সম্পাদনা করুন (স্টপ, যানবাহন, সময়সীমা, তাজা থাকার বাজেট), তারপর পরিকল্পনা করুন।</p>
+<textarea id="lJson" class="w-full rounded-2xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink font-mono text-xs min-h-[220px] resize-y focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"></textarea>
+<div class="flex gap-2.5 flex-wrap mt-2.5"><select id="lProv" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]"><option value="haversine" data-i18n="straightLine">সরলরেখা অনুমান</option><option value="osrm" data-i18n="osrm">সড়ক নেটওয়ার্ক (OSRM, কনফিগার করা থাকলে)</option></select><button class="flex-1 min-w-[150px] bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-full px-5 py-3.5 transition shadow-sm" id="lGo" data-i18n="planBtn">রুট পরিকল্পনা করুন</button></div>
+<div id="lOut" class="mt-4"></div>
+<div id="lMapWrap" class="mt-6 hidden">
+<h4 class="font-display text-base font-extrabold text-brand-700" data-i18n="routeMapTitle">পরিকল্পিত রুটের মানচিত্র</h4>
+<div id="lMap" class="map-box mt-3"></div>
+</div>
+</section>
+
+<section class="pane bg-white border border-line rounded-3xl p-5 sm:p-6 card-shadow hidden" id="p-twin">
+<h3 class="font-display text-xl font-extrabold mb-4 text-brand-700" data-i18n="twinTitle">ব্যাচ ডিজিটাল টুইন — উৎস যাচাই</h3>
+<div class="flex gap-2.5 flex-wrap"><input id="tCode" class="flex-1 min-w-[150px] rounded-xl border border-[#e3ddca] bg-white px-3.5 py-3 text-ink placeholder:text-[#9aa79d] focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-[#d8ecdc]" placeholder="ব্যাচ কোড, যেমন FM-1A2B3C4D5E6F" data-ph="batchPh"><button class="bg-brand-500 hover:bg-brand-700 text-white font-bold rounded-full px-5 py-3.5 transition shadow-sm" id="tGo" data-i18n="lookupBtn">খুঁজুন</button></div>
+<div id="tOut" class="mt-4"></div>
+</section>
+</main>
+<footer class="bg-brand-700 text-[#d9e9dc]"><div class="max-w-[1180px] mx-auto px-4 sm:px-6 py-10"><div class="flex flex-wrap items-start justify-between gap-6"><div><a class="flex items-center gap-2.5 no-underline text-white text-xl font-display font-extrabold" href="/"><span class="w-10 h-10 rounded-xl bg-white/10 grid place-items-center text-xl">🌾</span><span>FARM<span class="text-accent">MARKET</span></span></a><p class="my-3 text-sm" data-i18n="footerText">কৃষকের ন্যায্য আয়, ক্রেতার সঠিক বাজার।</p></div><div><p class="text-xs font-bold uppercase tracking-wider text-[#9ec7a8]" data-i18n="builtWith">যা দিয়ে তৈরি</p><p class="text-sm mt-2 text-white font-semibold" data-i18n="stackCredits">FastAPI · MySQL · scikit-learn · OpenStreetMap</p></div></div><div class="border-t border-white/10 mt-6 pt-5 flex flex-wrap justify-between gap-2"><small class="text-[11px] text-[#a8c5af]">© 2026 FARMMARKET</small><small class="text-[11px] text-[#a8c5af]" data-i18n="footerNote">Hackathon MVP · তথ্য যাচাই করে লেনদেন করুন</small></div></div></footer>
+<script src="/insights.js"></script>
+</body></html>

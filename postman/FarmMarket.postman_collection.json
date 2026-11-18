@@ -1,0 +1,1881 @@
+{
+ "auth": {
+  "bearer": [
+   {
+    "key": "token",
+    "value": "{{farmer_token}}"
+   }
+  ],
+  "type": "bearer"
+ },
+ "info": {
+  "description": "FARMMARKET \u2014 Bangladesh farmer & buyer marketplace (FastAPI + MySQL/SQLAlchemy, JWT auth). Import into Postman, set base_url, then run the Auth folder first: the login requests save farmer_token / buyer_token to collection variables. Demo accounts (after `python seed_demo.py`): farmer@farmmarket.demo / buyer@farmmarket.demo, password Demo123!. Prices/forecasts are demo data unless real price history is ingested; see README.md.",
+  "name": "FARMMARKET",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "item": [
+  {
+   "item": [
+    {
+     "name": "Health check",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/health"
+     }
+    }
+   ],
+   "name": "Health"
+  },
+  {
+   "item": [
+    {
+     "name": "Register farmer (dev: saves verification_token)",
+     "request": {
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Rahim Uddin\",\n  \"email\": \"farmer@farmmarket.demo\",\n  \"password\": \"Demo123!\",\n  \"role\": \"farmer\",\n  \"district\": \"Gazipur\",\n  \"upazila\": \"Sreepur\",\n  \"phone\": \"01700000000\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/register"
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.verification_token) pm.collectionVariables.set('verification_token', j.verification_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Register buyer",
+     "request": {
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Ayesha Khan\",\n  \"email\": \"buyer@farmmarket.demo\",\n  \"password\": \"Demo123!\",\n  \"role\": \"buyer\",\n  \"district\": \"Gazipur\",\n  \"phone\": \"01800000000\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/register"
+     }
+    },
+    {
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.access_token) pm.collectionVariables.set('farmer_token', j.access_token);",
+         "if (j.refresh_token) pm.collectionVariables.set('farmer_refresh_token', j.refresh_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ],
+     "name": "Login farmer (saves farmer_token)",
+     "request": {
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"farmer@farmmarket.demo\",\n  \"password\": \"Demo123!\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/login"
+     }
+    },
+    {
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.access_token) pm.collectionVariables.set('buyer_token', j.access_token);",
+         "if (j.refresh_token) pm.collectionVariables.set('buyer_refresh_token', j.refresh_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ],
+     "name": "Login buyer (saves buyer_token)",
+     "request": {
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"buyer@farmmarket.demo\",\n  \"password\": \"Demo123!\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/login"
+     }
+    },
+    {
+     "name": "Me (farmer token)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/auth/me"
+     }
+    },
+    {
+     "name": "Login transporter (saves transporter_token)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/login",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"transporter@farmmarket.demo\",\n  \"password\": \"Demo123!\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.access_token) pm.collectionVariables.set('transporter_token', j.access_token);",
+         "if (j.refresh_token) pm.collectionVariables.set('transporter_refresh_token', j.refresh_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Login admin (saves admin_token)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/login",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"admin@farmmarket.demo\",\n  \"password\": \"Demo123!\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.access_token) pm.collectionVariables.set('admin_token', j.access_token);",
+         "if (j.refresh_token) pm.collectionVariables.set('admin_refresh_token', j.refresh_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Refresh token (rotates; saves new tokens)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/refresh",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"refresh_token\": \"{{farmer_refresh_token}}\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.access_token) pm.collectionVariables.set('farmer_token', j.access_token);",
+         "if (j.refresh_token) pm.collectionVariables.set('farmer_refresh_token', j.refresh_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Logout (revokes refresh token)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/logout",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"refresh_token\": \"{{farmer_refresh_token}}\"\n}"
+      }
+     }
+    },
+    {
+     "name": "Forgot password (dev: saves reset_token)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/forgot-password",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"farmer@farmmarket.demo\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.reset_token) pm.collectionVariables.set('reset_token', j.reset_token);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Reset password",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/reset-password",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"token\": \"{{reset_token}}\",\n  \"new_password\": \"Demo123!\"\n}"
+      }
+     }
+    },
+    {
+     "name": "Verify email",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/verify-email",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"token\": \"{{verification_token}}\"\n}"
+      }
+     }
+    },
+    {
+     "name": "Resend verification (farmer token)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/auth/resend-verification"
+     }
+    }
+   ],
+   "name": "Auth"
+  },
+  {
+   "item": [
+    {
+     "name": "List products",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/products?search=Tomato&district=Gazipur"
+     }
+    },
+    {
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.id) pm.collectionVariables.set('product_id', String(j.id));"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ],
+     "name": "Create product (farmer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Tomato\",\n  \"quantity\": 600,\n  \"unit\": \"kg\",\n  \"price_per_unit\": 35,\n  \"district\": \"Gazipur\",\n  \"description\": \"Fresh deshi tomato\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/products"
+     }
+    },
+    {
+     "name": "Update product (farmer, owner)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Tomato\",\n  \"quantity\": 550,\n  \"unit\": \"kg\",\n  \"price_per_unit\": 36,\n  \"district\": \"Gazipur\",\n  \"description\": \"Fresh deshi tomato\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "url": "{{base_url}}/api/v1/products/{{product_id}}"
+     }
+    },
+    {
+     "name": "Delete product (farmer, owner)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "DELETE",
+      "url": "{{base_url}}/api/v1/products/{{product_id}}"
+     }
+    },
+    {
+     "name": "List demands (farmer sees all open)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/demands"
+     }
+    },
+    {
+     "name": "Create demand (buyer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{buyer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_name\": \"Tomato\",\n  \"required_quantity\": 500,\n  \"unit\": \"kg\",\n  \"target_price\": 40,\n  \"district\": \"Gazipur\",\n  \"notes\": \"For Dhaka retail\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/demands"
+     }
+    },
+    {
+     "name": "Smart matches",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/matches"
+     }
+    },
+    {
+     "name": "Price records",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/prices?product_name=Tomato&district=Gazipur"
+     }
+    },
+    {
+     "name": "List countries",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/countries"
+     }
+    },
+    {
+     "name": "List crops",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/crops"
+     }
+    },
+    {
+     "name": "List transporters (public directory)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/transporters"
+     }
+    },
+    {
+     "name": "Upload product images (attach files first)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/products/{{product_id}}/images",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "formdata",
+       "formdata": [
+        {
+         "key": "files",
+         "type": "file",
+         "src": "/path/to/photo.jpg",
+         "description": "Attach up to 5 jpeg/png/webp images (<=5 MB each)"
+        }
+       ]
+      }
+     }
+    }
+   ],
+   "name": "Marketplace"
+  },
+  {
+   "item": [
+    {
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.order_id) pm.collectionVariables.set('order_id', String(j.order_id));"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ],
+     "name": "Place order (buyer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{buyer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 50,\n  \"delivery_address\": \"Gazipur Sadar\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/orders"
+     }
+    },
+    {
+     "name": "My orders",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/orders/my"
+     }
+    },
+    {
+     "name": "Accept order (farmer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"status\": \"accepted\"}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/orders/{{order_id}}/status"
+     }
+    },
+    {
+     "name": "Complete order (farmer, after accept)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"status\": \"completed\"}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/orders/{{order_id}}/status"
+     }
+    },
+    {
+     "name": "Cancel order (buyer, pending only)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{buyer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"status\": \"cancelled\"}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/orders/{{order_id}}/status"
+     }
+    },
+    {
+     "name": "Notifications",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/notifications"
+     }
+    },
+    {
+     "name": "Dashboard",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/dashboard"
+     }
+    }
+   ],
+   "name": "Orders"
+  },
+  {
+   "item": [
+    {
+     "name": "Hubs",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/forecast/hubs"
+     }
+    },
+    {
+     "name": "Forecast overview (all crops, Bangladesh hubs)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/forecast/overview?horizon=8"
+     }
+    },
+    {
+     "name": "Prophet forecast \u2014 Dhaka tomato",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/forecast?hub=dhaka&crop=tomato&horizon=8"
+     }
+    },
+    {
+     "name": "scikit-learn forecast \u2014 Dhaka tomato (no Prophet needed)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/forecast/sklearn?hub=dhaka&crop=tomato&horizon=8"
+     }
+    },
+    {
+     "name": "Hub context \u2014 Dhaka",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/forecast/context/dhaka"
+     }
+    }
+   ],
+   "name": "Forecast (Prophet + scikit-learn)"
+  },
+  {
+   "item": [
+    {
+     "name": "Vision status (trained models)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/vision/status"
+     }
+    },
+    {
+     "name": "Assess photo (farmer; 503 until a model is trained)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "formdata": [
+        {
+         "key": "image",
+         "src": [],
+         "type": "file"
+        },
+        {
+         "key": "crop",
+         "type": "text",
+         "value": "tomato"
+        },
+        {
+         "key": "reference_price",
+         "type": "text",
+         "value": "35"
+        },
+        {
+         "key": "apply_price",
+         "type": "text",
+         "value": "false"
+        }
+       ],
+       "mode": "formdata"
+      },
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/vision/assess"
+     }
+    }
+   ],
+   "name": "Vision (photo grading)"
+  },
+  {
+   "item": [
+    {
+     "name": "Supported languages",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/advisor/languages"
+     }
+    },
+    {
+     "name": "Planting advice (Bangla)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"report\": \"Tomato prices are rising in Dhaka wholesale markets; monsoon rains expected next week.\",\n  \"crop\": \"tomato\",\n  \"region\": \"Gazipur\",\n  \"language\": \"bn\",\n  \"hub_id\": \"dhaka\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/advisor/advice"
+     }
+    }
+   ],
+   "name": "Advisor (Krishi Bondhu)"
+  },
+  {
+   "item": [
+    {
+     "name": "Plan dispatch (Dhaka depot \u2192 Gazipur, Khulna)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"depot\": {\"lat\": 23.8103, \"lon\": 90.4125},\n  \"stops\": [\n    {\"id\": \"gazipur\", \"lat\": 24.0023, \"lon\": 90.4266, \"load_kg\": 500, \"service_min\": 30},\n    {\"id\": \"savar\", \"lat\": 23.8446, \"lon\": 90.2567, \"load_kg\": 300, \"service_min\": 20}\n  ],\n  \"vehicles\": [\n    {\"id\": \"truck-1\", \"capacity_kg\": 2000, \"refrigerated\": true}\n  ],\n  \"mode\": \"delivery\",\n  \"road_provider\": \"haversine\",\n  \"hub_id\": \"dhaka\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/logistics/plan"
+     }
+    },
+    {
+     "name": "Optimize route (OR-Tools VRP; 503 if not installed)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/logistics/optimize",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"depot\": {\n    \"lat\": 23.8103,\n    \"lon\": 90.4125\n  },\n  \"stops\": [\n    {\n      \"id\": \"gazipur\",\n      \"lat\": 24.0023,\n      \"lon\": 90.4266,\n      \"load_kg\": 500,\n      \"service_min\": 30\n    },\n    {\n      \"id\": \"savar\",\n      \"lat\": 23.8446,\n      \"lon\": 90.2567,\n      \"load_kg\": 300,\n      \"service_min\": 20\n    }\n  ],\n  \"vehicles\": [\n    {\n      \"id\": \"truck-1\",\n      \"capacity_kg\": 2000,\n      \"refrigerated\": true\n    }\n  ],\n  \"mode\": \"delivery\",\n  \"road_provider\": \"haversine\",\n  \"hub_id\": \"dhaka\"\n}"
+      }
+     }
+    }
+   ],
+   "name": "Logistics"
+  },
+  {
+   "item": [
+    {
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.code) pm.collectionVariables.set('batch_code', j.code);",
+         "if (j.batch_code) pm.collectionVariables.set('batch_code', j.batch_code);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ],
+     "name": "Create batch (farmer; saves batch_code)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"crop\": \"tomato\",\n  \"origin_district\": \"Gazipur\",\n  \"quantity_kg\": 500,\n  \"variety\": \"Deshi\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/twin/batches"
+     }
+    },
+    {
+     "name": "My batches (farmer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/twin/batches/mine"
+     }
+    },
+    {
+     "name": "Add batch event",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"event_type\": \"harvested\",\n  \"data\": {\"note\": \"Picked at dawn, Gazipur\"}\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/events"
+     }
+    },
+    {
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.device_id) pm.collectionVariables.set('device_id', j.device_id);",
+         "if (j.id) pm.collectionVariables.set('device_id', String(j.id));"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ],
+     "name": "Register sensor device (farmer; saves device_id)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/devices?label=truck-sensor-1"
+     }
+    },
+    {
+     "name": "Submit sensor reading (needs HMAC signature \u2014 see README device-signing formula)",
+     "request": {
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"device_id\": \"{{device_id}}\",\n  \"recorded_at\": \"2026-11-15T12:00:00\",\n  \"temperature_c\": 8.5,\n  \"moisture_pct\": 65,\n  \"moisture_kind\": \"rh\",\n  \"signature\": \"REPLACE_WITH_HMAC_SHA256_HEX\"\n}"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/twin/readings"
+     }
+    },
+    {
+     "name": "Seal batch (farmer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/seal"
+     }
+    },
+    {
+     "name": "Anchor batch (farmer)",
+     "request": {
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/anchor"
+     }
+    },
+    {
+     "name": "Verify batch",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/verify"
+     }
+    },
+    {
+     "name": "Public batch view",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/twin/public/{{batch_code}}"
+     }
+    },
+    {
+     "name": "Batch QR code (PNG)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/qr"
+     }
+    },
+    {
+     "name": "Batch threshold alerts",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/twin/batches/{{batch_code}}/alerts",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    }
+   ],
+   "name": "Digital Twin"
+  },
+  {
+   "name": "Farms & Offers",
+   "item": [
+    {
+     "name": "List my farms",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/farms",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Create farm (saves farm_id)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/farms",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Rahim Farm\",\n  \"district\": \"Gazipur\",\n  \"upazila\": \"Sreepur\",\n  \"area_acres\": 2.5,\n  \"country_code\": \"BD\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.id) pm.collectionVariables.set('farm_id', j.id);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Create offer (saves offer_id)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/offers",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{buyer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 50,\n  \"offered_price\": 38.0,\n  \"message\": \"Can collect this week\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.id) pm.collectionVariables.set('offer_id', j.id);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "List my offers",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/offers/my",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Accept offer (creates an order)",
+     "request": {
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/offers/{{offer_id}}",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"status\": \"accepted\"\n}"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Deliveries & Vehicles",
+   "item": [
+    {
+     "name": "Assign transporter to order",
+     "request": {
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/orders/{{order_id}}/assign",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"transporter_id\": 11\n}"
+      }
+     }
+    },
+    {
+     "name": "List my deliveries",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/deliveries",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{transporter_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Mark picked up",
+     "request": {
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/deliveries/{{order_id}}",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{transporter_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"delivery_status\": \"picked_up\"\n}"
+      }
+     }
+    },
+    {
+     "name": "Mark delivered (with proof note)",
+     "request": {
+      "method": "PATCH",
+      "url": "{{base_url}}/api/v1/deliveries/{{order_id}}",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{transporter_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"delivery_status\": \"delivered\",\n  \"proof_note\": \"Delivered to buyer, signed receipt\"\n}"
+      }
+     }
+    },
+    {
+     "name": "List my vehicles",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/vehicles",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{transporter_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Create vehicle (saves vehicle_id)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/vehicles",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{transporter_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"vehicle_type\": \"truck\",\n  \"capacity_kg\": 2000,\n  \"refrigerated\": true,\n  \"plate_number\": \"DHK-1234\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.id) pm.collectionVariables.set('vehicle_id', j.id);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Assistant & Data Sources",
+   "item": [
+    {
+     "name": "Chat with Krishi Bondhu (saves conversation_id)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/assistant/chat",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"message\": \"How do I store tomatoes?\",\n  \"language\": \"en\"\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.conversation_id) pm.collectionVariables.set('conversation_id', j.conversation_id);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "List conversations",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/assistant/conversations",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Get conversation",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/assistant/conversations/{{conversation_id}}",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "List data sources",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/admin/data-sources",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Sync World Bank source",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/admin/data-sources/2/sync",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Test Gemini probe (admin, 60s)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/assistant/test",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Stream chat (SSE tokens)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/assistant/chat/stream",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"message\": \"How do I store tomatoes?\",\n  \"language\": \"en\"\n}"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Admin",
+   "item": [
+    {
+     "name": "Admin stats",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/admin/stats",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "List users (farmers)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/admin/users?role=farmer",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Audit logs",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/admin/audit-logs",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Messaging",
+   "item": [
+    {
+     "name": "Create conversation with buyer (user 2, saves chat_conversation_id)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/conversations",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"other_user_id\": 2\n}"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "var j = pm.response.json();",
+         "if (j.id) pm.collectionVariables.set('chat_conversation_id', j.id);"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "List my conversations",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/conversations",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Unread count",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/conversations/unread-count",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Get thread messages",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/conversations/{{chat_conversation_id}}/messages",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    },
+    {
+     "name": "Send message",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/conversations/{{chat_conversation_id}}/messages",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"body\": \"Hello! I have 500 kg of fresh tomatoes ready this week.\"\n}"
+      }
+     }
+    },
+    {
+     "name": "Mark thread read",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/conversations/{{chat_conversation_id}}/read",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{farmer_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Weather & Prices",
+   "item": [
+    {
+     "name": "Weather for Dhaka (Open-Meteo, no key)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/weather/dhaka"
+     }
+    },
+    {
+     "name": "Latest prices (REAL/DEMO labels)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/prices/latest"
+     }
+    },
+    {
+     "name": "Enter daily price (admin)",
+     "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/v1/prices/manual",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"crop\": \"tomato\",\n  \"hub\": \"dhaka\",\n  \"price\": 42,\n  \"note\": \"Karwan Bazar retail observation\"\n}"
+      }
+     }
+    },
+    {
+     "name": "Recent manual price entries (admin)",
+     "request": {
+      "method": "GET",
+      "url": "{{base_url}}/api/v1/prices/manual",
+      "auth": {
+       "bearer": [
+        {
+         "key": "token",
+         "value": "{{admin_token}}"
+        }
+       ],
+       "type": "bearer"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "variable": [
+  {
+   "key": "base_url",
+   "value": "http://127.0.0.1:8000"
+  },
+  {
+   "key": "farmer_token",
+   "value": ""
+  },
+  {
+   "key": "buyer_token",
+   "value": ""
+  },
+  {
+   "key": "product_id",
+   "value": "1"
+  },
+  {
+   "key": "order_id",
+   "value": "1"
+  },
+  {
+   "key": "batch_code",
+   "value": ""
+  },
+  {
+   "key": "device_id",
+   "value": ""
+  },
+  {
+   "key": "transporter_token",
+   "value": ""
+  },
+  {
+   "key": "admin_token",
+   "value": ""
+  },
+  {
+   "key": "farmer_refresh_token",
+   "value": ""
+  },
+  {
+   "key": "buyer_refresh_token",
+   "value": ""
+  },
+  {
+   "key": "reset_token",
+   "value": ""
+  },
+  {
+   "key": "verification_token",
+   "value": ""
+  },
+  {
+   "key": "farm_id",
+   "value": ""
+  },
+  {
+   "key": "offer_id",
+   "value": ""
+  },
+  {
+   "key": "vehicle_id",
+   "value": ""
+  },
+  {
+   "key": "conversation_id",
+   "value": ""
+  },
+  {
+   "key": "transporter_id",
+   "value": "11"
+  },
+  {
+   "key": "chat_conversation_id",
+   "value": ""
+  }
+ ]
+}

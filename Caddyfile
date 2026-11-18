@@ -1,0 +1,29 @@
+# FarmMarket production reverse proxy (Caddy 2).
+#
+# {$DOMAIN} is Caddy's parse-time environment-variable syntax (see
+# https://caddyserver.com/docs/caddyfile/concepts#environment-variables):
+# the value comes from the DOMAIN variable passed to the caddy service in
+# docker-compose.prod.yml. A bare domain as the site address enables
+# automatic HTTPS (Let's Encrypt, HTTP-01 challenge) and HTTP -> HTTPS
+# redirect with no manual certificate configuration. Ports 80 and 443 must
+# be reachable from the internet and DNS must point at this server first.
+{$DOMAIN} {
+	encode gzip zstd
+
+	# HSTS only. The other security headers (X-Content-Type-Options,
+	# X-Frame-Options, Referrer-Policy, etc.) are the backend's job, so
+	# they are deliberately not duplicated here.
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	reverse_proxy api:8000
+
+	# Note: Caddy >= 2.5 ignores client-supplied X-Forwarded-* headers by
+	# default and sets X-Forwarded-For itself to the real client IP (no
+	# trusted_proxies are configured, and none are needed — Caddy is the
+	# edge proxy). The backend therefore trusts the header ONLY when
+	# TRUST_PROXY=true (set in docker-compose.prod.yml) and reads the
+	# LAST hop — the one Caddy wrote. Do not add trusted_proxies unless
+	# another proxy/CDN is placed in front of Caddy, and then only for
+	# that proxy's own IP ranges: with trusted_proxies set, Caddy
+	# preserves a client-supplied X-Forwarded-For and appends to it.
+}

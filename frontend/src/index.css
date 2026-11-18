@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-cream text-ink font-sans antialiased;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Leaflet fixes */
+.leaflet-container {
+  font-family: inherit;
+  background: #e8f2ea;
+  z-index: 0;
+}
+
+.route-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: #1e7a4c;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.route-depot {
+  background: #f2a33c;
+  font-size: 14px;
+}
+
+.hub-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px 9999px 9999px 0;
+  transform: rotate(-45deg);
+  background: #0c3b2e;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+}
+
+.hub-pin span {
+  transform: rotate(45deg);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Recharts focus outline cleanup */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
+
+/* Thin scrollbars for chat / drawers */
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #d8d2ba;
+  border-radius: 9999px;
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.floaty {
+  animation: floaty 4s ease-in-out infinite;
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "destination": "https://farmmarket.onrender.com/api/:path*",
+      "source": "/api/:path*"
+    },
+    {
+      "destination": "https://farmmarket.onrender.com/uploads/:path*",
+      "source": "/uploads/:path*"
+    },
+    {
+      "destination": "/index.html",
+      "source": "/(.*)"
+    }
+  ]
+}

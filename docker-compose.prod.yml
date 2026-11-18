@@ -1,0 +1,97 @@
+# FarmMarket — PRODUCTION stack (MySQL + FastAPI + Caddy with automatic HTTPS).
+#
+#   cp backend/.env.example .env        # then edit .env (see DEPLOY.md)
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Required variables (compose fails fast with a clear message if any is
+# missing): DOMAIN, SECRET_KEY, MYSQL_ROOT_PASSWORD, FRONTEND_ORIGINS.
+# Optional: GEMINI_API_KEY, OSRM_BASE_URL, HUB_PROFILE.
+# (OPENWEATHER_API_KEY is legacy/ignored — weather uses keyless Open-Meteo.)
+#
+# Only Caddy is exposed to the host (ports 80/443). The API is reachable
+# only through Caddy, and MySQL is reachable only inside the compose network.
+# Volumes are named *_prod so this stack never shares data with the dev
+# stack (docker-compose.yml) when both are run from this directory.
+#
+# Config-verified only: no Docker daemon exists in the build environment,
+# so this file has NOT been built or run. See DEPLOY.md before first use.
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required - set it in .env (see DEPLOY.md)}
+      MYSQL_DATABASE: farmmarket_db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data_prod:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    # Build context is the repo root: the Dockerfile builds the React
+    # frontend in a node stage and serves it from the same origin.
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required - set it in .env (see DEPLOY.md)}@db:3306/farmmarket_db?charset=utf8mb4
+      SECRET_KEY: "${SECRET_KEY:?SECRET_KEY is required - generate one (see DEPLOY.md)}"
+      ENVIRONMENT: production
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:?FRONTEND_ORIGINS is required - set it to https://<your-domain> in .env}
+      # Caddy is the trusted edge proxy: it discards client-supplied
+      # X-Forwarded-For and writes the real client IP, so the backend may
+      # key its auth rate limiter on the last X-Forwarded-For hop.
+      TRUST_PROXY: "true"
+      HUB_PROFILE: ${HUB_PROFILE:-bangladesh}
+      # Optional integrations (empty = clearly-labelled fallback mode):
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      GEMINI_TIMEOUT_S: ${GEMINI_TIMEOUT_S:-20}
+      OSRM_BASE_URL: ${OSRM_BASE_URL:-}
+      # In-app scheduler (daily price-freshness check): off unless enabled.
+      # Set SCHEDULER_ENABLED=true in the root .env to enable it.
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-false}
+      PUBLIC_BASE_URL: https://${DOMAIN:?DOMAIN is required - set it in .env (see DEPLOY.md)}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Uploaded listing photos survive container rebuilds.
+      - uploads_data:/app/uploads
+    healthcheck:
+      # urllib raises (non-zero exit) on any non-2xx status, so /api/health
+      # returning 503 while the DB is unreachable correctly reads unhealthy.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # No ports published: only Caddy is exposed to the host.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required - set it in .env (see DEPLOY.md)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mysql_data_prod:
+  uploads_data:
+  caddy_data:
+  caddy_config:
