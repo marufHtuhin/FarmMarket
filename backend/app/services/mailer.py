@@ -1,4 +1,5 @@
-"""Email delivery: HTTPS APIs first (Mailjet / Postmark / SendGrid), SMTP fallback.
+"""Email delivery: HTTPS APIs first (Brevo / Mailjet / Postmark / SendGrid),
+SMTP fallback.
 
 This module is the mailer API contract shared by the email-features batch:
 ``is_configured`` / ``send_email`` / ``public_base_url`` /
@@ -6,16 +7,26 @@ This module is the mailer API contract shared by the email-features batch:
 worker (email verification) calls ``send_verification_email`` — keep the
 names and signatures exactly as documented here.
 
-Four transports, one API — precedence is Mailjet, then Postmark, then
-SendGrid, then SMTP (first configured wins). All three HTTPS transports
-exist because Render's free plan blocks outbound SMTP ports (25/465/587),
-so a Gmail SMTP config that works locally silently fails on Render free —
-with any HTTPS transport configured, SMTP is never even attempted there.
-Each provider also has its own signup quirk, so the alternates stay
-available: Mailjet is primary (free 6,000/month, Gmail signup OK),
-Postmark requires a work email at signup, and SendGrid blocked one
-account at login (ERR_USER_FORBIDDEN_ACCESS).
+Five transports, one API — precedence is Brevo, then Mailjet, then
+Postmark, then SendGrid, then SMTP (first configured wins). All four
+HTTPS transports exist because Render's free plan blocks outbound SMTP
+ports (25/465/587), so a Gmail SMTP config that works locally silently
+fails on Render free — with any HTTPS transport configured, SMTP is never
+even attempted there. Each provider also has its own signup quirk, so
+the alternates stay available: Brevo is primary (free 300/day, Gmail
+signup OK, single-sender verification); Mailjet blocked one account
+(mj-0001 "temporarily blocked"); Postmark requires a work email at
+signup; SendGrid blocked one account at login
+(ERR_USER_FORBIDDEN_ACCESS).
 
+* **Brevo** (``BREVO_API_KEY`` set): POSTs to
+  ``api.brevo.com/v3/smtp/email`` over HTTPS (via httpx — already a
+  dependency) with the key in the custom ``api-key`` header (NOT an
+  Authorization Bearer token). The sender address (``SMTP_FROM`` or
+  ``SMTP_USER``) must be a Brevo-verified sender address, or sending
+  fails. Note: mail sent from a ``@gmail.com`` sender may land in spam
+  because SPF/DKIM cannot align for a Gmail address — no code change
+  can fix that; a custom domain would be needed.
 * **Mailjet** (``MAILJET_API_KEY`` + ``MAILJET_API_SECRET`` both set):
   POSTs to ``api.mailjet.com/v3.1/send`` over HTTPS (via httpx — already
   a dependency) with HTTP Basic auth. The sender address (``SMTP_FROM``
@@ -33,6 +44,9 @@ account at login (ERR_USER_FORBIDDEN_ACCESS).
 
 Configuration (see backend/.env.example):
 
+* ``BREVO_API_KEY`` — Brevo API key (profile -> SMTP & API -> Generate
+  API key). Brevo shows the key once at creation; it is NEVER logged
+  (it travels only in the ``api-key`` header).
 * ``MAILJET_API_KEY`` / ``MAILJET_API_SECRET`` — Mailjet Master API key
   + secret key (Account -> API keys). Both are required; neither is
   EVER logged (they travel only in the Basic-auth header).
@@ -52,8 +66,8 @@ Configuration (see backend/.env.example):
   a display name (a bare address in the From header is a Gmail spam
   signal; a named sender helps inbox placement, but never guarantees it).
   Also the sender address for the HTTPS transports — must be verified
-  with the provider in use (Mailjet sender address / Postmark Sender
-  Signature / SendGrid Single Sender).
+  with the provider in use (Brevo verified sender / Mailjet sender
+  address / Postmark Sender Signature / SendGrid Single Sender).
 * ``SMTP_USE_TLS`` — default True when unset; "false"/"0"/"no"/"off"
   disables STARTTLS (plain SMTP, e.g. a local dev relay).
 
@@ -81,6 +95,7 @@ DEFAULT_BASE_URL = "http://localhost:5173"
 SENDGRID_URL = "https://api.sendgrid.com/v3/mail/send"
 POSTMARK_URL = "https://api.postmarkapp.com/email"
 MAILJET_URL = "https://api.mailjet.com/v3.1/send"
+BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _smtp_host() -> str:
@@ -129,6 +144,10 @@ def _smtp_use_tls() -> bool:
     return raw.strip().lower() not in ("false", "0", "no", "off")
 
 
+def _brevo_api_key() -> str:
+    return env("BREVO_API_KEY")
+
+
 def _sendgrid_api_key() -> str:
     return env("SENDGRID_API_KEY")
 
@@ -164,10 +183,11 @@ def _sender_name_addr() -> tuple[str, str]:
 
 
 def is_configured() -> bool:
-    """True when ANY transport is configured: Mailjet key+secret, a
-    Postmark token, a SendGrid key, or SMTP host+user+password all
-    non-empty."""
-    if _mailjet_configured() or _postmark_token() or _sendgrid_api_key():
+    """True when ANY transport is configured: a Brevo key, Mailjet
+    key+secret, a Postmark token, a SendGrid key, or SMTP
+    host+user+password all non-empty."""
+    if (_brevo_api_key() or _mailjet_configured() or _postmark_token()
+            or _sendgrid_api_key()):
         return True
     return bool(_smtp_host() and _smtp_user() and _smtp_password())
 
@@ -176,11 +196,14 @@ def send_email(to: str, subject: str, text_body: str,
                html_body: str | None = None) -> bool:
     """Send one email. Returns False on ANY failure — never raises.
 
-    Precedence is Mailjet, then Postmark, then SendGrid, then SMTP
-    (first configured wins). On Render free the SMTP ports are blocked,
-    so SMTP must never be attempted there when an HTTPS transport is
-    available. With no token/key the SMTP path runs exactly as before.
+    Precedence is Brevo, then Mailjet, then Postmark, then SendGrid,
+    then SMTP (first configured wins). On Render free the SMTP ports
+    are blocked, so SMTP must never be attempted there when an HTTPS
+    transport is available. With no token/key the SMTP path runs
+    exactly as before.
     """
+    if _brevo_api_key():
+        return _send_via_brevo(to, subject, text_body, html_body)
     if _mailjet_configured():
         return _send_via_mailjet(to, subject, text_body, html_body)
     if _postmark_token():
@@ -188,6 +211,52 @@ def send_email(to: str, subject: str, text_body: str,
     if _sendgrid_api_key():
         return _send_via_sendgrid(to, subject, text_body, html_body)
     return _send_via_smtp(to, subject, text_body, html_body)
+
+
+def _send_via_brevo(to: str, subject: str, text_body: str,
+                    html_body: str | None = None) -> bool:
+    """Send one email via the Brevo transactional email API. Never raises.
+
+    Success is HTTP 201 (Brevo returns a messageId in the body, but the
+    body is not parsed — the status alone decides). Any other status or
+    a transport error returns False. The API key is NEVER logged: it
+    travels only in the ``api-key`` header, which httpx exceptions do
+    not include. Note the header name: Brevo authenticates with the
+    custom ``api-key`` header, NOT an Authorization Bearer token.
+    """
+    name, addr = _sender_name_addr()
+    if not addr:
+        logger.warning("Brevo key is set but no sender address is "
+                       "configured (set SMTP_FROM or SMTP_USER)")
+        return False
+    payload = {
+        "sender": {"name": name, "email": addr},
+        "to": [{"email": to}],
+        "subject": subject,
+        "textContent": text_body,
+    }
+    if html_body:
+        payload["htmlContent"] = html_body
+    try:
+        with httpx.Client(timeout=SMTP_TIMEOUT_S) as client:
+            response = client.post(
+                BREVO_URL,
+                headers={"accept": "application/json",
+                         "content-type": "application/json",
+                         "api-key": _brevo_api_key()},
+                json=payload,
+            )
+    except Exception:
+        logger.exception("Failed to send email to %s via Brevo", to)
+        return False
+    if response.status_code == 201:
+        return True
+    # Brevo error bodies name the cause (e.g. an unverified sender or
+    # an account awaiting sending approval) and never contain the key —
+    # safe to log, truncated.
+    logger.warning("Brevo send failed for %s: HTTP %s: %s", to,
+                   response.status_code, response.text[:300])
+    return False
 
 
 def _send_via_mailjet(to: str, subject: str, text_body: str,
