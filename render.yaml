@@ -17,7 +17,7 @@ services:
   - type: web
     name: farmmarket
     runtime: docker
-    plan: starter
+    plan: free
     numInstances: 1
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
@@ -60,7 +60,7 @@ services:
       # keep numInstances at 1. FAOSTAT is annual-only and is never scheduled.
       - key: SCHEDULER_ENABLED
         value: "true"
-    disk:
-      name: farmmarket-uploads
-      mountPath: /app/uploads
-      sizeGB: 1
+    # disk:
+    #   name: farmmarket-uploads
+    #   mountPath: /app/uploads
+    #   sizeGB: 1
