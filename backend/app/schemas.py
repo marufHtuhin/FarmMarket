@@ -5,7 +5,10 @@ class RegisterIn(BaseModel):
     name: str = Field(min_length=2, max_length=100)
     email: EmailStr
     phone: str = Field(default="", max_length=30)
-    password: str = Field(min_length=8, max_length=72)
+    # Minimum length 6, no letter/digit complexity rule: any 6+ character
+    # password is accepted (user decision, 18 Nov 2026). The 72-byte cap
+    # below is a bcrypt limit, not a complexity rule.
+    password: str = Field(min_length=6, max_length=72)
 
     @field_validator("password")
     @classmethod
@@ -72,7 +75,8 @@ class VerifyEmailIn(BaseModel):
 
 class ResetPasswordIn(BaseModel):
     token: str
-    new_password: str = Field(min_length=8, max_length=72)
+    # Same policy as registration: minimum 6 characters, no complexity rule.
+    new_password: str = Field(min_length=6, max_length=72)
 
     @field_validator("new_password")
     @classmethod

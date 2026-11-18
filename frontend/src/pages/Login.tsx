@@ -8,7 +8,7 @@ import { useToast } from "../contexts/ToastContext";
 import { loginSchema, type LoginForm } from "../utils/validation";
 import { apiErrorMessage } from "../utils/format";
 import { Card, Button } from "../components/ui/core";
-import { Field, Input } from "../components/ui/fields";
+import { Field, Input, PasswordInput } from "../components/ui/fields";
 
 export const DEMO_ACCOUNTS = [
   { labelKey: "demoFarmer", email: "farmer@farmmarket.demo", password: "Demo123!" },
@@ -61,7 +61,12 @@ export function LoginPage() {
             <Input type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
           </Field>
           <Field label={t("password")} required error={errors.password ? t(errors.password.message as string) : undefined}>
-            <Input type="password" autoComplete="current-password" {...register("password")} />
+            <PasswordInput
+              autoComplete="current-password"
+              showLabel={t("showPassword")}
+              hideLabel={t("hidePassword")}
+              {...register("password")}
+            />
           </Field>
           <Button type="submit" loading={submitting} className="w-full" size="lg">
             {t("login")}

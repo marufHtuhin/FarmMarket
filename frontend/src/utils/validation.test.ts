@@ -24,6 +24,7 @@ describe("registerSchema", () => {
     password: "secret1",
     confirmPassword: "secret1",
     role: "transporter" as const,
+    district: "Dhaka",
   };
 
   it("accepts farmer, buyer and transporter roles", () => {
@@ -39,6 +40,31 @@ describe("registerSchema", () => {
     if (!res.success) {
       expect(res.error.issues[0].message).toBe("passwordsMismatch");
     }
+  });
+
+  it("accepts any 6+ character password, digits-only included", () => {
+    expect(
+      registerSchema.safeParse({ ...base, password: "123456", confirmPassword: "123456" }).success,
+    ).toBe(true);
+    expect(
+      registerSchema.safeParse({ ...base, password: "abcdef", confirmPassword: "abcdef" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a password shorter than 6 characters", () => {
+    const res = registerSchema.safeParse({ ...base, password: "12345", confirmPassword: "12345" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toBe("minChars6");
+    }
+  });
+
+  it("requires a district but upazila is optional", () => {
+    const { district: _d, ...noDistrict } = base;
+    expect(registerSchema.safeParse(noDistrict).success).toBe(false);
+    expect(registerSchema.safeParse({ ...base, district: "" }).success).toBe(false);
+    expect(registerSchema.safeParse({ ...base, upazila: "Savar" }).success).toBe(true);
+    expect(registerSchema.safeParse(base).success).toBe(true);
   });
 });
 

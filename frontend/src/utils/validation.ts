@@ -12,10 +12,14 @@ export const registerSchema = z
     name: z.string().min(2, "required"),
     email: z.string().min(1, "required").email("invalidEmail"),
     phone: z.string().optional(),
+    // Minimum 6 characters, any characters allowed — no letter/digit
+    // complexity rule (matches the backend; user decision, 18 Nov 2026).
     password: z.string().min(6, "minChars6"),
     confirmPassword: z.string().min(6, "minChars6"),
     role: z.enum(["farmer", "buyer", "transporter"], { message: "required" }),
-    district: z.string().optional(),
+    // District is required (64-district select); upazila is optional and
+    // depends on the chosen district.
+    district: z.string().min(1, "required"),
     upazila: z.string().optional(),
     business_name: z.string().optional(),
   })

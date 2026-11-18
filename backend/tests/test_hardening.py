@@ -158,21 +158,21 @@ def test_register_rate_limited_429(client, monkeypatch):
 
 
 # ---------------- password policy ----------------
-def test_password_min_length_8(client):
+def test_password_min_length_6(client):
     r = client.post("/api/v1/auth/register",
                     json={"name": "Short", "email": "short@x.t",
-                          "password": "Abc123!", "role": "buyer"})
-    assert r.status_code == 422  # 7 chars: too short
+                          "password": "Abc12", "role": "buyer"})
+    assert r.status_code == 422  # 5 chars: too short
     r = client.post("/api/v1/auth/register",
                     json={"name": "Ok", "email": "ok@x.t",
-                          "password": "Abc123!x", "role": "buyer"})
-    assert r.status_code == 200  # 8 chars: accepted
+                          "password": "Abc123", "role": "buyer"})
+    assert r.status_code == 200  # 6 chars: accepted
 
 
-def test_reset_password_min_length_8():
+def test_reset_password_min_length_6():
     with pytest.raises(ValueError):
-        schemas.ResetPasswordIn(token="t", new_password="Abc123!")
-    assert schemas.ResetPasswordIn(token="t", new_password="Abc123!x")
+        schemas.ResetPasswordIn(token="t", new_password="Abc12")
+    assert schemas.ResetPasswordIn(token="t", new_password="Abc123")
 
 
 # ---------------- JWT lifetime ----------------

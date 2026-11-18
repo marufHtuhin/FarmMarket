@@ -293,7 +293,7 @@ def register(data: schemas.RegisterIn, request: Request, background_tasks: Backg
     resp = {"access_token": create_access_token(user.id),
             "refresh_token": issue_refresh_token(db, user.id), "token_type":"bearer",
             "user": {"id":user.id,"name":user.name,"email":user.email,"role":user.role,
-                     "district":user.district,"phone":user.phone,
+                     "district":user.district,"upazila":user.upazila,"phone":user.phone,
                      "email_verified":user.email_verified}}
     if (os.getenv("ENVIRONMENT", "development").lower() != "production"
             and not _mailer_configured()):
@@ -322,7 +322,7 @@ def login(data: schemas.LoginIn, request: Request, db: Session=Depends(get_db)):
     return {"access_token":create_access_token(user.id),
             "refresh_token":issue_refresh_token(db, user.id),"token_type":"bearer",
             "user":{"id":user.id,"name":user.name,"email":user.email,"role":user.role,
-                    "district":user.district,"phone":user.phone,
+                    "district":user.district,"upazila":user.upazila,"phone":user.phone,
                     "email_verified":user.email_verified}}
 
 @app.post("/api/v1/auth/refresh")
@@ -467,7 +467,7 @@ def resend_verification(request: Request, background_tasks: BackgroundTasks, db:
 @app.get("/api/v1/auth/me")
 def me(user=Depends(get_current_user)):
     return {"id":user.id,"name":user.name,"email":user.email,"role":user.role,
-            "district":user.district,"phone":user.phone,
+            "district":user.district,"upazila":user.upazila,"phone":user.phone,
             "email_verified":user.email_verified}
 
 @app.get("/api/v1/products")

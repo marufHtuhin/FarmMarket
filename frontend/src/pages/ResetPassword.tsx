@@ -6,7 +6,7 @@ import { useLang } from "../i18n/LanguageContext";
 import { useToast } from "../contexts/ToastContext";
 import { apiErrorMessage } from "../utils/format";
 import { Card, Button } from "../components/ui/core";
-import { Field, Input } from "../components/ui/fields";
+import { Field, PasswordInput } from "../components/ui/fields";
 
 export function ResetPasswordPage() {
   const { t } = useLang();
@@ -46,14 +46,26 @@ export function ResetPasswordPage() {
           }}
         >
           <Field label={t("newPassword")} required error={password && password.length < 6 ? t("minChars6") : undefined}>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              showLabel={t("showPassword")}
+              hideLabel={t("hidePassword")}
+              required
+            />
           </Field>
           <Field
             label={t("confirmPassword")}
             required
             error={confirm && password !== confirm ? t("passwordsMismatch") : undefined}
           >
-            <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+            <PasswordInput
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              showLabel={t("showPassword")}
+              hideLabel={t("hidePassword")}
+              required
+            />
           </Field>
           <Button type="submit" loading={mutation.isPending} disabled={!valid} className="w-full" size="lg">
             {t("resetPassword")}

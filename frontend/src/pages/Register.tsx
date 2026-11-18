@@ -7,12 +7,13 @@ import { useAuth, roleHome } from "../contexts/AuthContext";
 import { useLang } from "../i18n/LanguageContext";
 import { useToast } from "../contexts/ToastContext";
 import { registerSchema, type RegisterForm } from "../utils/validation";
+import { BD_DISTRICTS, upazilasForDistrict } from "../data/bd-locations";
 import { apiErrorMessage } from "../utils/format";
 import { Card, Button } from "../components/ui/core";
-import { Field, Input, Select } from "../components/ui/fields";
+import { Field, Input, PasswordInput, Select } from "../components/ui/fields";
 
 export function RegisterPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { register: doRegister } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -25,8 +26,15 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterForm>({ resolver: zodResolver(registerSchema) });
+
+  // Dependent upazila select: options come from the chosen district, and
+  // the upazila resets whenever the district changes.
+  const selectedDistrict = watch("district") || "";
+  const upazilaOptions = upazilasForDistrict(selectedDistrict);
 
   const err = (key?: string) => (key ? t(key) : undefined);
 
@@ -94,18 +102,49 @@ export function RegisterPage() {
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t("password")} required error={err(errors.password?.message)}>
-              <Input type="password" autoComplete="new-password" {...register("password")} />
+              <PasswordInput
+                autoComplete="new-password"
+                showLabel={t("showPassword")}
+                hideLabel={t("hidePassword")}
+                {...register("password")}
+              />
             </Field>
             <Field label={t("confirmPassword")} required error={err(errors.confirmPassword?.message)}>
-              <Input type="password" autoComplete="new-password" {...register("confirmPassword")} />
+              <PasswordInput
+                autoComplete="new-password"
+                showLabel={t("showPassword")}
+                hideLabel={t("hidePassword")}
+                {...register("confirmPassword")}
+              />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("district")}>
-              <Input type="text" {...register("district")} />
+            <Field label={t("district")} required error={err(errors.district?.message)}>
+              <Select
+                defaultValue=""
+                {...register("district", { onChange: () => setValue("upazila", "") })}
+              >
+                <option value="" disabled>
+                  {t("selectDistrict")}
+                </option>
+                {BD_DISTRICTS.map((d) => (
+                  <option key={d.en} value={d.en}>
+                    {lang === "bn" ? d.bn : d.en}
+                  </option>
+                ))}
+              </Select>
             </Field>
-            <Field label={t("upazila")}>
-              <Input type="text" {...register("upazila")} />
+            <Field label={t("upazila")} error={err(errors.upazila?.message)}>
+              <Select defaultValue="" disabled={!selectedDistrict} {...register("upazila")}>
+                <option value="">
+                  {selectedDistrict ? t("selectUpazila") : t("selectDistrictFirst")}
+                </option>
+                {upazilaOptions.map((u) => (
+                  <option key={u.en} value={u.en}>
+                    {lang === "bn" ? u.bn : u.en}
+                  </option>
+                ))}
+              </Select>
             </Field>
           </div>
           <Field label={t("business")}>
