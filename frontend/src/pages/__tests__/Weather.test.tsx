@@ -19,7 +19,16 @@ vi.mock("../../services/api", async (importOriginal) => {
   };
 });
 
+// The direct browser fallback is mocked here so the page tests never
+// touch the live network; the real fetch + transform are covered by
+// utils/openmeteo.test.ts.
+vi.mock("../../utils/openmeteo", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../utils/openmeteo")>();
+  return { ...actual, fetchDirectWeather: vi.fn() };
+});
+
 import { forecastApi, weatherApi, type WeatherResponse } from "../../services/api";
+import { fetchDirectWeather } from "../../utils/openmeteo";
 
 const HUBS = {
   profile: "bangladesh",
@@ -76,6 +85,9 @@ beforeEach(() => {
   localStorage.clear();
   localStorage.setItem("fm_lang", "en");
   vi.mocked(forecastApi.hubs).mockResolvedValue(HUBS);
+  // Default: the direct fallback is unavailable, so each test exercises
+  // the backend path unless it opts into the fallback explicitly.
+  vi.mocked(fetchDirectWeather).mockResolvedValue(null);
 });
 
 describe("WeatherPage", () => {
@@ -136,5 +148,29 @@ describe("WeatherPage", () => {
     });
     // Today + forecast still render.
     expect(screen.getByText("28.9°C")).toBeInTheDocument();
+  });
+
+  it("falls back to a direct browser fetch when the backend reports unavailable", async () => {
+    vi.mocked(weatherApi.get).mockResolvedValueOnce({
+      hub: "dhaka",
+      hub_name: "Dhaka",
+      available: false,
+      note: "Open-Meteo weather service is unreachable right now; no weather data is available.",
+      source: "open-meteo",
+      fetched_at: "2026-11-17T05:15:00+00:00",
+    });
+    vi.mocked(fetchDirectWeather).mockResolvedValueOnce({ ...SUCCESS, direct: true });
+    renderWithProviders(<WeatherPage />, { route: "/weather" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Current conditions")).toBeInTheDocument();
+    });
+    expect(screen.getByText("28.9°C")).toBeInTheDocument();
+    expect(screen.queryByText("Weather data is unavailable")).not.toBeInTheDocument();
+    // The direct payload is labelled as such in the source line.
+    expect(screen.getByText(/fetched directly in your browser/)).toBeInTheDocument();
+    expect(vi.mocked(fetchDirectWeather)).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "dhaka", lat: 23.8103, lon: 90.4125 }),
+    );
   });
 });

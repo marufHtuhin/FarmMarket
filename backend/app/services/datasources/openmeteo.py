@@ -16,9 +16,12 @@ advisor weather all work with ZERO API keys.
 """
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timezone
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 SOURCE = "open-meteo"
@@ -149,9 +152,15 @@ def fetch_weather(lat: float, lon: float, client: httpx.Client | None = None,
                 "forecast_days": FORECAST_DAYS,
                 "timezone": "auto",
             })
-        except httpx.HTTPError:
+        except httpx.HTTPError as exc:
+            # Logged, not swallowed: on shared cloud hosts the cause (429
+            # rate limit on the shared IP, timeout, DNS) is only visible
+            # in the server log — the caller still gets the same None.
+            logger.warning("Open-Meteo request failed: %s: %s",
+                           type(exc).__name__, exc)
             return None
         except ValueError:  # non-JSON body: same "unavailable" outcome, never a 500
+            logger.warning("Open-Meteo returned a non-JSON body")
             return None
     finally:
         if own:
@@ -222,9 +231,12 @@ def fetch_daily_outlook(lat: float, lon: float, client: httpx.Client | None = No
                 "forecast_days": FORECAST_DAYS,
                 "timezone": "auto",
             })
-        except httpx.HTTPError:
+        except httpx.HTTPError as exc:
+            logger.warning("Open-Meteo request failed: %s: %s",
+                           type(exc).__name__, exc)
             return None
         except ValueError:  # non-JSON body: same "unavailable" outcome, never a 500
+            logger.warning("Open-Meteo returned a non-JSON body")
             return None
     finally:
         if own:

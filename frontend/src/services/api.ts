@@ -490,6 +490,9 @@ export interface WeatherResponse {
   past?: WeatherDay[];
   forecast?: WeatherDay[];
   notes?: string[];
+  /** True when the payload came from a direct browser call to Open-Meteo
+      (utils/openmeteo.ts fallback), not from the backend. */
+  direct?: boolean;
 }
 
 // ---------------------------------------------------------------------------

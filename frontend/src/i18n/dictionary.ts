@@ -35,6 +35,7 @@ export const newBn = {
   weatherUnavailableNote:
     "Open-Meteo সেবার সঙ্গে এখন সংযোগ করা যাচ্ছে না। পরে আবার চেষ্টা করুন — কোনো অনুমান করা তথ্য দেখানো হচ্ছে না।",
   weatherSource: "উৎস: Open-Meteo",
+  wxDirect: "সরাসরি আপনার ব্রাউজার থেকে আনা",
   wxChartTitle: "তাপমাত্রা — গত ও আগামী দিন",
   wxDate: "তারিখ",
   wxTempMax: "সর্বোচ্চ",
@@ -513,6 +514,7 @@ export const newEn = {
   weatherUnavailableNote:
     "Open-Meteo could not be reached right now. Please try again later — no estimated data is shown.",
   weatherSource: "Source: Open-Meteo",
+  wxDirect: "fetched directly in your browser",
   wxChartTitle: "Temperature — past and coming days",
   wxDate: "Date",
   wxTempMax: "High",

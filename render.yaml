@@ -17,7 +17,7 @@ services:
   - type: web
     name: farmmarket
     runtime: docker
-    plan: free
+    plan: starter
     numInstances: 1
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
@@ -38,12 +38,29 @@ services:
       - key: GEMINI_TIMEOUT_S
         value: "20"
       # Email (password reset + registration verification). Optional: without
-      # SMTP the app still runs, but no emails are sent — and in production
-      # the reset/verification tokens are never in API responses, so set
-      # these before real users depend on reset/verification. Gmail:
-      # host smtp.gmail.com, port 587, TLS on, user = your Gmail address,
-      # password = a Gmail app password (NOT the real Gmail password) —
-      # see backend/.env.example for the app-password steps.
+      # a mailer the app still runs, but no emails are sent — and in
+      # production the reset/verification tokens are never in API
+      # responses, so set one up before real users depend on
+      # reset/verification. Render's FREE plan blocks outbound SMTP ports
+      # (25/465/587), so Gmail SMTP CANNOT send mail from a free service:
+      # use an HTTPS email API instead. Precedence is Mailjet, then
+      # Postmark, then SendGrid, then SMTP (first configured wins).
+      # Mailjet is primary (free 6,000/month, Gmail signup OK); Postmark
+      # needs a work email at signup; SendGrid blocked one account at
+      # login. The sender address (SMTP_FROM or SMTP_USER) must be
+      # verified with the provider in use (Mailjet sender address /
+      # Postmark Sender Signature / SendGrid Single Sender). The SMTP
+      # vars are for local dev (and paid Render plans) only. Gmail app
+      # password: Google Account -> Security -> 2-Step Verification ON ->
+      # App passwords — see backend/.env.example for the full steps.
+      - key: MAILJET_API_KEY
+        sync: false
+      - key: MAILJET_API_SECRET
+        sync: false
+      - key: POSTMARK_SERVER_TOKEN
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -60,7 +77,7 @@ services:
       # keep numInstances at 1. FAOSTAT is annual-only and is never scheduled.
       - key: SCHEDULER_ENABLED
         value: "true"
-    # disk:
-    #   name: farmmarket-uploads
-    #   mountPath: /app/uploads
-    #   sizeGB: 1
+    disk:
+      name: farmmarket-uploads
+      mountPath: /app/uploads
+      sizeGB: 1

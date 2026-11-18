@@ -125,6 +125,22 @@ def test_fetch_weather_returns_none_when_api_unreachable():
     assert data is None
 
 
+def test_fetch_weather_logs_the_failure_for_server_diagnostics(caplog):
+    """The cause must reach the server log: on a shared cloud host a 429
+    (rate limit on the shared IP) looks identical to a timeout from the
+    outside, and only the log tells them apart."""
+    import logging
+    err = httpx.HTTPStatusError("429 Too Many Requests",
+                                request=httpx.Request("GET", "https://x"),
+                                response=httpx.Response(429))
+    with caplog.at_level(logging.WARNING, logger="app.services.datasources.openmeteo"):
+        data = openmeteo.fetch_weather(23.8103, 90.4125,
+                                       client=_FakeClient(error=err), today=TODAY)
+    assert data is None
+    assert any("Open-Meteo request failed" in r.message and "429" in r.message
+               for r in caplog.records)
+
+
 def test_fetch_weather_empty_past_is_labelled_not_invented():
     no_past = {"timezone": "Asia/Dhaka",
                "current": FORECAST_PAYLOAD["current"],
@@ -241,9 +257,27 @@ def _patch_fetch(monkeypatch, client):
     monkeypatch.setattr(openmeteo.httpx, "Client", lambda *a, **k: client)
 
 
+def _pin_today(monkeypatch):
+    """Pin the clock to TODAY for endpoint tests.
+
+    The fixture payload is anchored to 2026-11-17, but the endpoint
+    splits past/forecast on the real current date — so this test broke
+    the day the calendar moved past the fixture (2026-11-18: the
+    2026-11-17 row fell into "past", making 8 past days instead of 7).
+    Pinning the clock keeps the endpoint test deterministic.
+    """
+    class _FixedDate(date):
+        @classmethod
+        def today(cls):
+            return TODAY
+
+    monkeypatch.setattr(openmeteo, "date", _FixedDate)
+
+
 def test_endpoint_success_shape(client, monkeypatch):
     fake = _FakeClient()
     _patch_fetch(monkeypatch, fake)
+    _pin_today(monkeypatch)
     r = client.get("/api/v1/weather/dhaka")
     assert r.status_code == 200, r.text
     body = r.json()

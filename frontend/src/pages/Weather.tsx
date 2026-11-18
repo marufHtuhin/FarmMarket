@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CloudSun, Droplets, Umbrella, Wind } from "lucide-react";
-import { forecastApi, weatherApi, type WeatherDay } from "../services/api";
+import { forecastApi, weatherApi, type WeatherDay, type WeatherResponse } from "../services/api";
 import { useLang } from "../i18n/LanguageContext";
 import { apiErrorMessage } from "../utils/format";
 import { FALLBACK_HUBS } from "../utils/geo";
+import { fetchDirectWeather } from "../utils/openmeteo";
 import { conditionGlyph, conditionLabelKey } from "../utils/weather";
 import { Button, Card, EmptyState, ErrorState, PageHeader, Spinner } from "../components/ui/core";
 import { Select } from "../components/ui/fields";
@@ -44,16 +45,47 @@ export function WeatherPage() {
   const [hub, setHub] = useState("dhaka");
 
   const hubsQ = useQuery({ queryKey: ["forecast-hubs"], queryFn: forecastApi.hubs, retry: false });
+  const hubs = hubsQ.data?.hubs || FALLBACK_HUBS;
   const wxQ = useQuery({
     queryKey: ["weather", hub],
-    queryFn: () => weatherApi.get(hub),
+    queryFn: async () => {
+      // Backend first (10-minute server cache). If the server cannot
+      // reach Open-Meteo — e.g. the host's shared IP hit Open-Meteo's
+      // free per-IP rate limit — fall back to a direct browser call,
+      // which comes from the visitor's own IP (utils/openmeteo.ts).
+      let backend: WeatherResponse | null = null;
+      let backendError: unknown = null;
+      try {
+        backend = await weatherApi.get(hub);
+        if (backend.available) return backend;
+      } catch (err) {
+        backendError = err;
+        // fall through to the direct call
+      }
+      const info = hubs.find((h) => h.id === hub);
+      if (info) {
+        const direct = await fetchDirectWeather({
+          id: info.id,
+          name: info.name,
+          lat: info.lat,
+          lon: info.lon,
+        });
+        if (direct) return direct;
+      }
+      // Both paths failed: keep the backend's labelled unavailable
+      // payload when we have one, so the page shows "unavailable",
+      // never a crash. Otherwise rethrow the backend's own error so
+      // the error state still names the real cause.
+      if (backend) return backend;
+      if (backendError) throw backendError;
+      throw new Error("weather unavailable");
+    },
     retry: false,
     // The backend caches for 10 minutes; refetching sooner would just
     // return the same payload.
     staleTime: 10 * 60 * 1000,
   });
 
-  const hubs = hubsQ.data?.hubs || FALLBACK_HUBS;
   const wx = wxQ.data;
   const pastUnavailable = (wx?.notes || []).includes("past_unavailable");
 
@@ -220,6 +252,7 @@ export function WeatherPage() {
               its provenance. */}
           <p className="text-xs text-muted" lang={lang === "bn" ? "en" : undefined}>
             {t("weatherSource")} · {t("lastUpdated")}: {fmtDateTime(wx.fetched_at)}
+            {wx.direct ? ` · ${t("wxDirect")}` : ""}
           </p>
         </>
       )}
