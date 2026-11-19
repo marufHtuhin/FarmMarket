@@ -537,7 +537,7 @@ def matches(db:Session=Depends(get_db),user=Depends(get_current_user)):
             if user.role=="farmer" and p.farmer_id!=user.id: continue
             m=calculate_match(d,p)
             if m and m["score"]>=50:
-                result.append({"demand_id":d.id,"buyer_name":d.buyer.name,"product_id":p.id,
+                result.append({"demand_id":d.id,"buyer_id":d.buyer_id,"buyer_name":d.buyer.name,"product_id":p.id,
                     "product_name":p.name,"farmer_id":p.farmer_id,"farmer_name":p.farmer.name,
                     "quantity":p.quantity,"required_quantity":d.required_quantity,"unit":p.unit,
                     "farmer_price":p.price_per_unit,"target_price":d.target_price,

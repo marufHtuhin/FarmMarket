@@ -83,6 +83,7 @@ export interface Demand {
 
 export interface Match {
   demand_id: number;
+  buyer_id: number;
   buyer_name: string;
   product_id: number;
   product_name: string;

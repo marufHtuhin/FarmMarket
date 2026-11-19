@@ -191,6 +191,25 @@ def test_matches_scoped_to_viewer(client):
     assert scores == sorted(scores, reverse=True) and all(s >= 50 for s in scores)
 
 
+def test_matches_include_buyer_id(client):
+    """The farmer needs the buyer's id to start a conversation (19 Nov 2026:
+    buyer->farmer messaging worked, but farmer->buyer had no buyer id to
+    message, so the farmer had no way to reply)."""
+    farmer = register(client, "f@x.t", "farmer")
+    buyer = register(client, "b@x.t", "buyer")
+    buyer_id = client.get("/api/v1/auth/me", headers=buyer).json()["id"]
+    add_product(client, farmer, name="Tomato", quantity=600, price=35)
+    client.post("/api/v1/demands", headers=buyer,
+                json={"product_name": "Tomato", "required_quantity": 500,
+                      "unit": "kg", "target_price": 40, "district": "Gazipur"})
+    rows = client.get("/api/v1/matches", headers=farmer).json()
+    assert len(rows) == 1
+    assert rows[0]["buyer_id"] == buyer_id
+    # The buyer sees the same buyer_id on their own view of the match.
+    rows = client.get("/api/v1/matches", headers=buyer).json()
+    assert len(rows) == 1 and rows[0]["buyer_id"] == buyer_id
+
+
 def test_matches_no_match_for_incompatible_product(client):
     farmer = register(client, "f@x.t", "farmer")
     buyer = register(client, "b@x.t", "buyer")

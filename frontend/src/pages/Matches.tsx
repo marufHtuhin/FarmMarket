@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Handshake } from "lucide-react";
 import { matchesApi } from "../services/api";
 import { useLang } from "../i18n/LanguageContext";
+import { useAuth } from "../contexts/AuthContext";
 import { apiErrorMessage, unitLabel } from "../utils/format";
+import { MessageButton } from "../components/MessageButton";
 import { Button, Card, EmptyState, ErrorState, PageHeader, Spinner } from "../components/ui/core";
 
 export function MatchesPage() {
   const { t, fmtNum, lang } = useLang();
+  const { user } = useAuth();
   const q = useQuery({ queryKey: ["matches"], queryFn: matchesApi.list });
 
   return (
@@ -60,6 +63,16 @@ export function MatchesPage() {
                   {t("viewProduct")}
                 </Button>
               </Link>
+              {((user?.role === "farmer" && m.buyer_id) || (user?.role === "buyer" && m.farmer_id)) && (
+                <div className="mt-3">
+                  <MessageButton
+                    size="sm"
+                    otherUserId={(user?.role === "farmer" ? m.buyer_id : m.farmer_id) as number}
+                    listingId={m.product_id}
+                    label={t(user?.role === "farmer" ? "messageBuyer" : "messageFarmer")}
+                  />
+                </div>
+              )}
             </Card>
           ))}
         </div>

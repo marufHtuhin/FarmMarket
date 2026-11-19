@@ -8,7 +8,12 @@ vi.mock("../../services/api", async (importOriginal) => {
   return { ...actual, matchesApi: { list: vi.fn() } };
 });
 
-import { matchesApi, type Match } from "../../services/api";
+import { matchesApi, type Match, type User } from "../../services/api";
+
+function seedUser(role: "farmer" | "buyer" | "admin") {
+  const user: User = { id: 1, name: "Test", email: "t@x.t", role };
+  localStorage.setItem("fm_user", JSON.stringify(user));
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -18,6 +23,7 @@ beforeEach(() => {
 
 const MATCH: Match = {
   demand_id: 1,
+  buyer_id: 9,
   buyer_name: "Dhaka Fresh Mart",
   product_id: 2,
   product_name: "Tomato",
@@ -44,5 +50,32 @@ describe("Matches page (19 Nov 2026 live QA)", () => {
     // The real price figures keep their own labels.
     expect(screen.getByText(/Buyer budget:/)).toBeInTheDocument();
     expect(screen.getByText(/Farmer price:/)).toBeInTheDocument();
+  });
+});
+
+describe("Matches page messaging (19 Nov 2026 farmer->buyer fix)", () => {
+  it("a farmer sees a Message buyer button on each match card", async () => {
+    seedUser("farmer");
+    vi.mocked(matchesApi.list).mockResolvedValue([MATCH]);
+    renderWithProviders(<MatchesPage />);
+    expect(await screen.findByRole("button", { name: "Message buyer" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Message farmer" })).not.toBeInTheDocument();
+  });
+
+  it("a buyer sees a Message farmer button on each match card", async () => {
+    seedUser("buyer");
+    vi.mocked(matchesApi.list).mockResolvedValue([MATCH]);
+    renderWithProviders(<MatchesPage />);
+    expect(await screen.findByRole("button", { name: "Message farmer" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Message buyer" })).not.toBeInTheDocument();
+  });
+
+  it("other roles see no message button (they are not parties to the match)", async () => {
+    seedUser("admin");
+    vi.mocked(matchesApi.list).mockResolvedValue([MATCH]);
+    renderWithProviders(<MatchesPage />);
+    expect(await screen.findByText(/Target quantity:/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Message buyer" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Message farmer" })).not.toBeInTheDocument();
   });
 });
