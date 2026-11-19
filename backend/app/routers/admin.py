@@ -1,4 +1,6 @@
 """Admin-only endpoints: platform stats, user management, audit logs."""
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -12,19 +14,54 @@ router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 admin = require_role("admin")
 
 
+def _recent_activity(db: Session, limit: int = 8) -> list[dict]:
+    """Latest platform activity across users, orders and products, newest
+    first: the admin dashboard's Recent activity feed. Each item carries a
+    kind + title + detail (names/numbers only — the frontend supplies the
+    translated kind label) and the creation timestamp."""
+    items: list[dict] = []
+    for u in (db.query(models.User).order_by(models.User.created_at.desc(),
+                                             models.User.id.desc()).limit(5).all()):
+        items.append({"kind": "user", "title": u.name, "detail": u.role,
+                      "created_at": u.created_at})
+    for o in (db.query(models.Order).order_by(models.Order.created_at.desc(),
+                                              models.Order.id.desc()).limit(5).all()):
+        product = getattr(o, "product", None)
+        detail = (f"{product.name} · {o.quantity:g} {product.unit}"
+                  if product else f"{o.quantity:g}")
+        items.append({"kind": "order", "title": f"#{o.id}", "detail": detail,
+                      "created_at": o.created_at})
+    for p in (db.query(models.Product).order_by(models.Product.created_at.desc(),
+                                                models.Product.id.desc()).limit(5).all()):
+        items.append({"kind": "product", "title": p.name, "detail": p.district,
+                      "created_at": p.created_at})
+    # created_at is a naive UTC datetime everywhere in this app; fall back
+    # to datetime.min (also naive) for any row that lacks one.
+    items.sort(key=lambda i: i["created_at"] or datetime.min, reverse=True)
+    return items[:limit]
+
+
 @router.get("/stats")
 def stats(db: Session = Depends(get_db), user=Depends(admin)):
+    """Platform counts for the admin dashboard. Field names match the
+    frontend's AdminStats contract (total_users / total_products /
+    total_orders / total_revenue / users_by_role) — a mismatch here used
+    to render every counter as 0 even with data present (found in the
+    19 Nov 2026 live QA). total_revenue counts accepted + completed
+    orders only; recent_activity is the newest users/orders/products."""
     users = db.query(models.User).all()
     orders = db.query(models.Order).all()
-    return {"users_total": len(users),
-            "farmers": sum(u.role == "farmer" for u in users),
-            "buyers": sum(u.role == "buyer" for u in users),
-            "transporters": sum(u.role == "transporter" for u in users),
-            "products": db.query(models.Product).count(),
-            "orders": len(orders),
+    by_role: dict[str, int] = {}
+    for u in users:
+        by_role[u.role] = by_role.get(u.role, 0) + 1
+    return {"total_users": len(users),
+            "total_products": db.query(models.Product).count(),
+            "total_orders": len(orders),
+            "total_revenue": round(sum(o.total_amount for o in orders
+                                       if o.status in ("accepted", "completed")), 2),
             "pending_orders": sum(o.status == "pending" for o in orders),
-            "total_sales": round(sum(o.total_amount for o in orders
-                                     if o.status in ("accepted", "completed")), 2)}
+            "users_by_role": by_role,
+            "recent_activity": _recent_activity(db)}
 
 
 @router.get("/users")

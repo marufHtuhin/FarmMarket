@@ -16,7 +16,17 @@ vi.mock("../../components/charts", () => ({
       data-first-price={data[0]?.price ?? ""}
     />
   ),
-  ForecastChart: () => <div data-testid="forecast-chart" />,
+  ForecastChart: ({ history, forecast }: {
+    history: Array<{ ds: string; y: number }>;
+    forecast: Array<{ ds: string; yhat: number; lower: number; upper: number }>;
+  }) => (
+    <div
+      data-testid="forecast-chart"
+      data-history-count={history.length}
+      data-history-last={history[history.length - 1]?.ds ?? ""}
+      data-forecast-first={forecast[0]?.ds ?? ""}
+    />
+  ),
 }));
 
 // Leaflet cannot render in jsdom.
@@ -159,5 +169,20 @@ describe("PricesPage trend chart (WS3)", () => {
     renderWithProviders(<PricesPage />);
     expect(await screen.findByText("Not enough price records to draw a chart.")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId("price-history-chart")).not.toBeInTheDocument());
+  });
+});
+
+describe("PricesPage forecast chart (19 Nov 2026 live QA)", () => {
+  it("forecast history ends on the same date as the trend chart", async () => {
+    mockAll();
+    renderWithProviders(<PricesPage />);
+    const trend = await screen.findByTestId("price-history-chart");
+    const forecast = await screen.findByTestId("forecast-chart");
+    // Trend's last point is 11/15/2026 (fmtDate); the forecast chart's
+    // history ends on the same day (ISO) — no ~3-month gap.
+    expect(trend).toHaveAttribute("data-last-date", "11/15/2026");
+    expect(forecast).toHaveAttribute("data-history-last", "2026-11-15");
+    // The forecast starts one week after the last history point.
+    expect(forecast).toHaveAttribute("data-forecast-first", "2026-11-22");
   });
 });

@@ -271,6 +271,13 @@ export interface Delivery {
   proof_note?: string | null;
 }
 
+export interface AdminActivity {
+  kind: "user" | "order" | "product";
+  title: string;
+  detail: string;
+  created_at?: string | null;
+}
+
 export interface AdminStats {
   total_users?: number;
   total_products?: number;
@@ -278,6 +285,7 @@ export interface AdminStats {
   total_revenue?: number;
   pending_orders?: number;
   users_by_role?: Record<string, number>;
+  recent_activity?: AdminActivity[];
 }
 
 export interface AdminUser extends User {

@@ -5,9 +5,20 @@ import pytest
 from datetime import datetime, timedelta
 
 from conftest import register, fruit_image
+from app.routers import forecast as forecast_router
 from app.services import twin as T, vision as V
 from app.services.datasources import prices, synthetic
 from app.config import get_hub
+
+
+@pytest.fixture(autouse=True)
+def _fresh_forecast_cache():
+    # The /forecast/sklearn cache is module-level and outlives each test's
+    # temp DB; clear it per test so a cached result from another test file
+    # can never leak into this file's endpoint assertions.
+    forecast_router.clear_forecast_cache()
+    yield
+    forecast_router.clear_forecast_cache()
 
 
 def test_existing_marketplace_still_works(client):

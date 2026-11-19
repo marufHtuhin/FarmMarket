@@ -112,6 +112,12 @@ def test_admin_audit_logs_empty_when_nothing_logged(client, db):
 def test_admin_stats_empty_platform_zeros(client, db):
     ah = make_admin(client, db)
     stats = client.get("/api/v1/admin/stats", headers=ah).json()
-    assert stats["users_total"] == 1 and stats["farmers"] == 0
-    assert stats["products"] == 0 and stats["orders"] == 0
-    assert stats["pending_orders"] == 0 and stats["total_sales"] == 0
+    # Field names match the frontend AdminStats contract (a mismatch here
+    # used to render every admin counter as 0 — 19 Nov 2026 live QA).
+    assert stats["total_users"] == 1
+    assert stats["users_by_role"] == {"admin": 1}
+    assert stats["total_products"] == 0 and stats["total_orders"] == 0
+    assert stats["pending_orders"] == 0 and stats["total_revenue"] == 0
+    # Only the admin user exists, so the activity feed has just that entry.
+    assert len(stats["recent_activity"]) == 1
+    assert stats["recent_activity"][0]["kind"] == "user"

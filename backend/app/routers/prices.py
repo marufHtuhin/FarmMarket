@@ -112,9 +112,12 @@ def price_history(hub: str, crop: str, db: Session = Depends(get_db)):
     New admin entries therefore appear here as new (or corrected) points
     with no code change.
 
-    Why not reuse /forecast/sklearn's history? That endpoint returns only
-    the last 52 points, with no per-point source/label/stale, and it fits a
-    RandomForest on every call. This is a cheap read of the stored series.
+    Why not reuse /forecast/sklearn's history? That endpoint returns no
+    per-point source/label/stale, and it fits a RandomForest (cached 1h
+    in memory, but still a model fit on a cold key). This is a cheap read
+    of the stored series. The two endpoints now return the same window:
+    the forecast history is the full fitted series, ending on the same
+    date as this one (fixed in the 19 Nov 2026 QA batch).
     """
     h = get_hub(hub.strip().lower())
     if h is None:

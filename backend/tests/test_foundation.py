@@ -317,9 +317,11 @@ def test_admin_stats_users_verify_and_audit_logs(client, db):
     register(client, "t@x.t", "transporter")
     admin = auth_headers(make_user(db, "admin@x.t", "admin"))
     stats = client.get("/api/v1/admin/stats", headers=admin).json()
-    assert stats["users_total"] == 4 and stats["farmers"] == 1
-    assert stats["buyers"] == 1 and stats["transporters"] == 1
-    assert stats["products"] == 0 and stats["orders"] == 0
+    assert stats["total_users"] == 4
+    assert stats["users_by_role"] == {"farmer": 1, "buyer": 1,
+                                      "transporter": 1, "admin": 1}
+    assert stats["total_products"] == 0 and stats["total_orders"] == 0
+    assert stats["total_revenue"] == 0 and stats["pending_orders"] == 0
     page = client.get("/api/v1/admin/users", headers=admin,
                       params={"role": "farmer"}).json()
     assert page["total"] == 1 and len(page["items"]) == 1

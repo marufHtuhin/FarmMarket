@@ -206,7 +206,9 @@ function BuyerDashboard() {
               {t("viewAll")}
             </Link>
           </div>
-          {recent.length === 0 ? (
+          {ordersQ.isLoading ? (
+            <Spinner />
+          ) : recent.length === 0 ? (
             <p className="mt-3 text-sm text-muted">{t("noOrders")}</p>
           ) : (
             <ul className="mt-3 divide-y divide-line">
@@ -226,7 +228,9 @@ function BuyerDashboard() {
         </Card>
         <Card className="p-5">
           <h2 className="font-display text-lg font-extrabold text-forest">{t("myDemands")}</h2>
-          {demands.length === 0 ? (
+          {demandsQ.isLoading ? (
+            <Spinner />
+          ) : demands.length === 0 ? (
             <p className="mt-3 text-sm text-muted">{t("noDemands")}</p>
           ) : (
             <ul className="mt-3 divide-y divide-line">
@@ -269,12 +273,16 @@ function TransporterDashboard() {
           </Link>
         }
       />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label={t("activeDeliveries")} value={fmtNum(active.length, 0)} icon={<Truck className="h-5 w-5" />} />
-        <StatCard label={t("myVehicles")} value={fmtNum((vehiclesQ.data || []).length, 0)} icon={<Car className="h-5 w-5" />} tint="bg-sand" />
-        <StatCard label={t("completed")} value={fmtNum(deliveries.filter((d) => d.delivery_status === "delivered").length, 0)} icon={<Package className="h-5 w-5" />} tint="bg-[#e6f4f1]" />
-        <StatCard label={t("deliveriesTitle")} value={fmtNum(deliveries.length, 0)} icon={<ClipboardList className="h-5 w-5" />} tint="bg-[#f2f8e3]" />
-      </div>
+      {deliveriesQ.isLoading || vehiclesQ.isLoading ? (
+        <Spinner label={t("loading")} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label={t("activeDeliveries")} value={fmtNum(active.length, 0)} icon={<Truck className="h-5 w-5" />} />
+          <StatCard label={t("myVehicles")} value={fmtNum((vehiclesQ.data || []).length, 0)} icon={<Car className="h-5 w-5" />} tint="bg-sand" />
+          <StatCard label={t("completed")} value={fmtNum(deliveries.filter((d) => d.delivery_status === "delivered").length, 0)} icon={<Package className="h-5 w-5" />} tint="bg-[#e6f4f1]" />
+          <StatCard label={t("deliveriesTitle")} value={fmtNum(deliveries.length, 0)} icon={<ClipboardList className="h-5 w-5" />} tint="bg-[#f2f8e3]" />
+        </div>
+      )}
       <Card className="mt-6 p-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-extrabold text-forest">{t("deliveriesTitle")}</h2>

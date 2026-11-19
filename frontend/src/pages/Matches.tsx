@@ -43,7 +43,7 @@ export function MatchesPage() {
                   {t("quantityLabel")}: <b className="text-ink">{fmtNum(m.quantity)} {unitLabel(m.unit, lang)}</b>
                 </p>
                 <p>
-                  {t("target")}: <b className="text-ink">{fmtNum(m.required_quantity)} {unitLabel(m.unit, lang)}</b>
+                  {t("targetQuantity")}: <b className="text-ink">{fmtNum(m.required_quantity)} {unitLabel(m.unit, lang)}</b>
                 </p>
                 <p>
                   {t("farmerPrice")}: <b className="text-ink">৳{fmtNum(m.farmer_price)}</b>

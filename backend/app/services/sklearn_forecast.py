@@ -13,9 +13,15 @@ Design (mirrors forecasting.forecast_pair's response shape):
     last-value naive baseline. Forecasts that do not beat it are returned
     with reliable=False.
   * Too little history -> forecasting.InsufficientDataError (never a
-    made-up forecast). Results are computed fresh on every call: they are
-    deliberately NOT written to ForecastSnapshot, whose (hub, crop, horizon)
-    key is shared with the Prophet forecaster.
+    made-up forecast). Results are deliberately NOT written to
+    ForecastSnapshot, whose (hub, crop, horizon) key is shared with the
+    Prophet forecaster; the /forecast/sklearn endpoint caches them in
+    memory instead (1-hour TTL — see routers/forecast.py).
+  * The returned "history" is the FULL fitted series (same window as the
+    /prices/history trend chart), so the forecast chart's history line
+    reaches the same end date as the trend chart. It used to be only the
+    last 52 points, which made the two charts disagree about the window
+    (flagged in the 19 Nov 2026 live QA).
 """
 from __future__ import annotations
 
@@ -169,8 +175,9 @@ def _backtest(df: pd.DataFrame, freq: str, horizon: int) -> dict:
 
 def forecast_sklearn(db: Session, hub: Hub | str, crop: str, horizon: int = 8) -> dict:
     """RandomForest price forecast for one hub x crop, same response shape as
-    forecasting.forecast_pair (plus a "model" key). Computed fresh each call;
-    never cached in ForecastSnapshot (shared with Prophet)."""
+    forecasting.forecast_pair (plus a "model" key). Fits fresh on every call
+    (the endpoint caches the result in memory for 1 hour); never written to
+    ForecastSnapshot (shared with Prophet)."""
     if isinstance(hub, str):
         resolved = get_hub(hub)
         if resolved is None:
@@ -190,7 +197,9 @@ def forecast_sklearn(db: Session, hub: Hub | str, crop: str, horizon: int = 8) -
     fc["upper"] = fc["yhat"] * np.exp(Z_80 * sigma)
     bt = _backtest(df, info.freq, horizon)
     last_level = float(df["y"].tail(4).mean())
-    tail = df.tail(52 if info.freq == "W" else 24)
+    # Full fitted series, not a 52-point tail: the forecast chart must show
+    # the same window as the trend chart (/prices/history), ending on the
+    # same last date — a shorter tail made the two charts disagree.
     forecast_rows = []
     for r in fc.itertuples():
         yhat = round(float(r.yhat), 2)
@@ -207,7 +216,7 @@ def forecast_sklearn(db: Session, hub: Hub | str, crop: str, horizon: int = 8) -
                    "sources": info.sources, "synthetic_share": round(info.synthetic_share, 3),
                    "real_only": info.real_only},
         "history": [{"ds": d.date().isoformat(), "y": round(float(v), 2)}
-                    for d, v in zip(tail["ds"], tail["y"])],
+                    for d, v in zip(df["ds"], df["y"])],
         "forecast": forecast_rows,
         "signal": F.signal(last_level, fc), "validation": bt, "reliable": bool(bt.get("reliable")),
         "warnings": (["Built on SYNTHETIC demo data - not a real market forecast."]

@@ -45,7 +45,10 @@ export function ForecastChart({
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e7e0cc" />
-          <XAxis dataKey="ds" tick={{ fontSize: 11 }} minTickGap={28} />
+          {/* Month labels (YYYY-MM): full ISO dates at this density made the
+              history end date hard to read — the live QA misread it as
+              ending ~Aug 2026. */}
+          <XAxis dataKey="ds" tick={{ fontSize: 11 }} minTickGap={28} tickFormatter={(v: string) => String(v).slice(0, 7)} />
           <YAxis tick={{ fontSize: 11 }} width={48} domain={["auto", "auto"]} />
           <Tooltip
             formatter={(value, name) => [
