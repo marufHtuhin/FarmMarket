@@ -1,4 +1,8 @@
-# FarmMarket computer vision — PyTorch transfer learning
+# FarmMarket Computer Vision — PyTorch Transfer Learning
+
+[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 
 CPU-only training + evaluation for the two vision tasks behind
 `POST /api/v1/vision/assess`: **disease** classification and **ripeness**
@@ -9,6 +13,36 @@ independently).
 > **No trained model ships with this repo.** The checkpoints below are
 > produced by *you*, from *your* labelled photos. Nothing in this package
 > downloads a dataset; the PlantVillage steps describe where to get one.
+
+## Contents
+
+- [How it fits in](#how-it-fits-in)
+- [Files](#files)
+- [Install (CPU-only)](#install-cpu-only)
+- [1. Prepare data](#1-prepare-data)
+- [2. Train](#2-train)
+- [3. Evaluate](#3-evaluate)
+- [4. Serve](#4-serve)
+- [Smoke test (no real data)](#smoke-test-no-real-data)
+
+## How it fits in
+
+Farmers grade produce from a photo in the web app (Photo grade check). The
+request hits `POST /api/v1/vision/assess`, which answers per task with
+whichever backend is available and says so in its `model` field:
+`"torch-resnet18"`, `"sklearn-randomforest"`, or `"unavailable"` (with a
+`model_not_trained` note). `GET /api/v1/vision/status` reports what is
+installed and which checkpoints exist. Grading, confidence thresholds and
+price logic are identical regardless of backend — only the model changes.
+
+## Files
+
+| File | Role |
+|---|---|
+| `train.py` | Training loop: stratified splits, backbones, early stopping, checkpoint + config + history output |
+| `evaluate.py` | Per-class precision/recall/F1 + confusion matrix, printed and written as JSON |
+| `dataset.py` | Dataset loading (split or flat folder layouts) and transforms |
+| `model.py` | Backbones (`resnet18`, `mobilenet_v3_small`), model building, checkpoint save/load |
 
 ## Install (CPU-only)
 

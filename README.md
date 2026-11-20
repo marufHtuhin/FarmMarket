@@ -1,30 +1,56 @@
-# FARMMARKET — Fair-Price Market Access for Farmers
+# 🌾 FARMMARKET — Fair-Price Market Access for Farmers
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-2E7D32?style=for-the-badge&logo=render&logoColor=white)](https://farmmarket-gdcm.onrender.com)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 A responsive, bilingual (বাংলা / English) full-stack platform connecting
 farmers directly with buyers, transporters and admins: fair-price listings,
 demand matching, offers, price forecasts, photo-based produce grading, a
-Bangla/English AI assistant, OR-Tools delivery optimisation, and a
-tamper-evident Digital Twin batch ledger with QR verification.
+Bangla/English AI assistant, delivery optimisation, and a tamper-evident
+Digital Twin batch ledger with QR verification.
 
-Primary market: **Bangladesh (BDT)**. Also configured for Kenya (KES),
-Nigeria (NGN), Ghana (GHS), Tanzania (TZS) and Uganda (UGX) — per-market
-pricing only, currencies are never mixed.
+Built by **Team Agronexis** for a hackathon. Primary market:
+**Bangladesh (BDT)**. Also configured for Kenya (KES), Nigeria (NGN),
+Ghana (GHS), Tanzania (TZS) and Uganda (UGX) — per-market pricing only,
+currencies are never mixed.
 
-## Stack
+## 🚀 Live Demo
 
-| Layer | Technology |
+**https://farmmarket-gdcm.onrender.com**
+
+> The demo runs on free-tier hosting, so the first load can take ~30 seconds
+> while the server wakes up. Demo accounts are listed in
+> [Demo accounts](#demo-accounts) below — no sign-up needed to try it.
+
+## 📸 Screenshots
+
+| Homepage | Marketplace |
 |---|---|
-| Frontend | React 19 + TypeScript + Vite, Tailwind CSS, React Router, TanStack Query, Recharts, Leaflet/OSM, PWA |
-| Backend | Python 3.12 + FastAPI, SQLAlchemy 2 + Alembic |
-| Database | MySQL 8 (SQLite fallback for the quick demo) |
-| Auth | JWT access + refresh-token rotation, Passlib (bcrypt) |
-| AI/ML | Prophet + scikit-learn forecasting; PyTorch + scikit-learn vision; Google Gemini assistant (RAG template fallback) |
-| Logistics | OR-Tools VRP + OSRM (haversine fallback) |
-| API Testing | Postman (86 requests, 15 folders) |
-| Tests | pytest, Vitest, Playwright |
-| Version Control | Git + GitHub |
+| ![FarmMarket homepage](docs/screenshots/homepage.png) | ![FarmMarket marketplace](docs/screenshots/marketplace.png) |
 
-## Features
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Quick Start](#-quick-start)
+- [Demo Accounts](#-demo-accounts)
+- [Demo Script (for judges)](#-demo-script-for-judges)
+- [API Overview](#-api-overview)
+- [Postman](#-postman)
+- [Testing](#-testing)
+- [Environment Variables](#-environment-variables)
+- [Deployment](#-deployment)
+- [Honesty and Limitations](#-honesty-and-limitations)
+- [Team](#-team)
+- [License](#-license)
+
+## ✨ Features
 
 ### Farmer
 - Register/login with district and upazila; manage farms.
@@ -88,7 +114,21 @@ pricing only, currencies are never mixed.
   `SCHEDULER_ENABLED=true` in production) runs a daily read-only
   price-freshness check. FAOSTAT is annual-only and is never scheduled.
 
-## Project structure
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19 + TypeScript + Vite, Tailwind CSS, React Router, TanStack Query, Recharts, Leaflet/OSM, PWA |
+| Backend | Python 3.12 + FastAPI, SQLAlchemy 2 + Alembic |
+| Database | MySQL 8 (SQLite fallback for the quick demo) |
+| Auth | JWT access + refresh-token rotation, Passlib (bcrypt) |
+| AI/ML | Prophet + scikit-learn forecasting; PyTorch + scikit-learn vision; Google Gemini assistant (template fallback, no key needed) |
+| Logistics | OR-Tools VRP + OSRM (haversine fallback) |
+| Deployment | Render + TiDB Cloud (live), Docker Compose (local), Caddy + VPS (alternative) |
+| API Testing | Postman (86 requests, 15 folders) |
+| Tests | pytest, Vitest, Playwright |
+
+## 📁 Project Structure
 
 ```
 FARMMARKET/
@@ -96,12 +136,12 @@ FARMMARKET/
 ├── docker-compose.yml          # MySQL (host :3307) + API (:8000)
 ├── database/schema.sql         # CREATE DATABASE farmmarket_db (utf8mb4)
 ├── docs/                       # API_AND_DEMO, ERD, POSTMAN, knowledge/ (RAG docs)
-├── postman/                    # 72-request collection
+├── postman/                    # 86-request collection
 ├── ai_services/computer_vision/# PyTorch train/eval pipeline
 ├── frontend/                   # React + TS + Vite (build -> frontend/dist)
-│   ├── src/                    # 30 pages, components, i18n (602 keys/language)
+│   ├── src/                    # 35 pages, components, i18n (EN + BN)
 │   ├── e2e/                    # Playwright specs + serve script
-│   └── dist/                   # built SPA (gitignored; included in the zip)
+│   └── dist/                   # built SPA (gitignored — build it with `npm run build`)
 ├── frontend-legacy/            # original vanilla-JS frontend (reference only)
 └── backend/
     ├── Dockerfile              # multi-stage: node builds SPA, python serves it
@@ -109,14 +149,14 @@ FARMMARKET/
     ├── requirements.txt        # core; requirements-ml.txt (torch), requirements-ortools.txt
     ├── requirements-prophet.txt
     ├── seed_demo.py            # idempotent demo seed
-    ├── alembic/                # migrations (2 revisions)
+    ├── alembic/                # migrations (6 revisions)
     ├── app/
-    │   ├── main.py             # FastAPI app, router auto-discovery, serves SPA
+    │   ├── main.py             # FastAPI app, router auto-discovery, serves SPA (auth endpoints live here)
     │   ├── config.py           # hub profiles (bangladesh / sub_saharan), crops
     │   ├── database.py         # SQLAlchemy engine/session (MySQL or SQLite)
-    │   ├── models.py           # 30 tables
+    │   ├── models.py           # 33 tables
     │   ├── schemas.py / security.py
-    │   ├── routers/            # 20 routers (auth, catalog, farms, offers, ...)
+    │   ├── routers/            # 17 routers (catalog, farms, offers, ...)
     │   └── services/           # matching, forecasting, vision, assistant, rag,
     │                           # logistics, ortools_routing, twin, datasources
     ├── scripts/                # ingest_prices, fit_forecasts, train_vision,
@@ -124,7 +164,7 @@ FARMMARKET/
     └── tests/                  # pytest suite
 ```
 
-## Quick start
+## ⚡ Quick Start
 
 ### A — SQLite demo (fastest, no database server)
 
@@ -142,9 +182,17 @@ uvicorn app.main:app
 ```
 
 Then open http://127.0.0.1:8000 — the API serves the built React app from
-`frontend/dist` (included in the release zip). For frontend development
-(hot reload), run `npm install` and `npm run dev` in `frontend/` and open
-http://127.0.0.1:5173 (proxied to :8000).
+`frontend/dist`. A fresh clone does not include `dist` (gitignored), so
+build it first:
+
+```powershell
+cd FARMMARKET\frontend
+npm install
+npm run build
+```
+
+For frontend development (hot reload), run `npm install` and `npm run dev`
+in `frontend/` and open http://127.0.0.1:5173 (proxied to :8000).
 
 macOS/Linux: same commands with `source venv/bin/activate` and
 `cp .env.example .env`.
@@ -179,26 +227,6 @@ DATABASE_URL=mysql+pymysql://root:YOUR_PASSWORD@127.0.0.1:3307/farmmarket_db?cha
 
 Set a unique, randomly generated `SECRET_KEY` (at least 32 characters).
 
-### C — Production deployment (VPS)
-
-For a real deployment, use the production stack instead of the dev compose
-file: [`DEPLOY.md`](DEPLOY.md) walks through it step by step (domain + DNS,
-env file, `docker-compose.prod.yml` with MySQL + API + Caddy automatic
-HTTPS, backups, updates, rollback). The short version:
-
-```powershell
-cp backend/.env.example .env   # at the REPO ROOT, then fill in DOMAIN,
-                               # SECRET_KEY, MYSQL_ROOT_PASSWORD, FRONTEND_ORIGINS
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-With `ENVIRONMENT=production` the app refuses to start on a demo/short
-`SECRET_KEY`, a SQLite database, or a wildcard CORS origin, and
-`seed_demo.py` refuses to run without `--allow-production` — demo accounts
-must never land in a production database. The production compose file,
-Dockerfile and Caddyfile are config-verified only in this repo (no Docker
-here); verify them on the deployment machine first.
-
 ### Optional installs
 
 ```bash
@@ -211,7 +239,7 @@ Without OR-Tools, `/logistics/optimize` returns 503 with a clear message and
 the UI falls back to the heuristic planner. Without torch, vision uses the
 sklearn baseline.
 
-## Demo accounts
+## 👥 Demo Accounts
 
 After running `python seed_demo.py` (password `Demo123!` for all):
 
@@ -235,7 +263,7 @@ The seed also creates 10 product listings, 6 buyer demands, 10 price records,
 (5 hubs × 5 crops × 104 weeks = 2,600 rows) for the forecasters. These are
 public demo credentials — change/remove them before deployment.
 
-## Demo script (for judges)
+## 🎬 Demo Script (for judges)
 
 1. **Toggle Bangla** — open the web app, switch between বাংলা and English, and
    browse the seeded marketplace (10 listings across 8 districts).
@@ -258,7 +286,7 @@ public demo credentials — change/remove them before deployment.
 7. **Logistics optimisation** — open Logistics, run an OR-Tools optimisation
    (if installed) and compare it with the heuristic baseline on the map.
 
-## API overview
+## 🔌 API Overview
 
 Base path: `/api/v1` (health at `/api/health`). Full interactive docs at
 `/docs` when the server is running. See also `docs/API_AND_DEMO.md`.
@@ -294,7 +322,7 @@ Base path: `/api/v1` (health at `/api/health`). Full interactive docs at
 | GET | `/api/v1/forecast?hub=&crop=&horizon=` | Public | Prophet forecast (503 if not installed) |
 | GET | `/api/v1/vision/status` | Public | Vision model availability |
 | POST | `/api/v1/vision/assess` | Farmer | Grade a crop photo |
-| POST | `/api/v1/assistant/chat` | JWT | Krishi Bondhu chat (Gemini+RAG or template) |
+| POST | `/api/v1/assistant/chat` | JWT | Krishi Bondhu chat (Gemini or template) |
 | POST | `/api/v1/assistant/chat/stream` | JWT | Streaming chat (SSE tokens; template fallback instant) |
 | POST | `/api/v1/assistant/chat-image` | JWT | Crop-photo disease detection via Gemini vision (503 without a key, 502 on Gemini failure — never a fabricated diagnosis) |
 | POST | `/api/v1/assistant/test` | Admin | One tiny live Gemini probe: ok/mode/latency/error (never the key) |
@@ -320,14 +348,14 @@ Base path: `/api/v1` (health at `/api/health`). Full interactive docs at
 | GET | `/api/v1/admin/data-sources` | Admin | Data-source status |
 | POST | `/api/v1/admin/data-sources/{id}/sync` | Admin | Sync a data source |
 
-## Postman
+## 📬 Postman
 
 Import `postman/FarmMarket.postman_collection.json` (86 requests in 15
 folders). Login requests save their JWTs and refresh tokens to collection
 variables automatically; Create Farm/Offer/Vehicle/Batch save their ids.
 Full instructions: [docs/POSTMAN.md](docs/POSTMAN.md).
 
-## Testing
+## 🧪 Testing
 
 ```bash
 cd backend && python -m pytest -q          # backend suite
@@ -338,7 +366,7 @@ cd frontend && npm run test:e2e            # Playwright (needs `npm run build` f
 
 See [TEST_REPORT.md](TEST_REPORT.md) for the latest run results.
 
-## Environment variables
+## ⚙️ Environment Variables
 
 Copy `backend/.env.example` to `backend/.env`. All integrations are optional:
 
@@ -349,7 +377,7 @@ Copy `backend/.env.example` to `backend/.env`. All integrations are optional:
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | Token lifetimes |
 | `ASSISTANT_RATE_LIMIT_PER_MIN` | Assistant rate limit (default 10) |
 | `HUB_PROFILE` | `bangladesh` (default) or `sub_saharan` |
-| `GEMINI_API_KEY` / `GEMINI_MODEL` | Krishi Bondhu assistant (gemini-3.5-flash-lite is the faster/cheaper model option) |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | Krishi Bondhu assistant (default chain: gemini-3.8-flash → gemini-3.5-flash-lite) |
 | `GEMINI_TIMEOUT_S` | Gemini call timeout in seconds (default 20, min 5) |
 | `GEMINI_TEST_TIMEOUT_S` | Admin test-probe bound, fixed at 60s in code (not an env var) |
 | `OPENWEATHER_API_KEY` | **Legacy, ignored** — weather now uses keyless Open-Meteo; delete the line if present |
@@ -359,7 +387,31 @@ Copy `backend/.env.example` to `backend/.env`. All integrations are optional:
 | `ANTHROPIC_API_KEY` | Legacy advisor LLM |
 | `MODEL_DIR` | Where trained vision models live |
 
-## Honesty and limitations
+## 🚢 Deployment
+
+**Live deployment (PaaS, free tier):** backend on
+[Render](https://render.com) + MySQL on [TiDB Cloud](https://tidbcloud.com),
+serving the built SPA itself. Full steps: [PAAS_DEPLOY.md](PAAS_DEPLOY.md).
+The Render service auto-deploys on push to `main`.
+
+**VPS alternative:** [`DEPLOY.md`](DEPLOY.md) walks through a production
+stack step by step (domain + DNS, env file, `docker-compose.prod.yml` with
+MySQL + API + Caddy automatic HTTPS, backups, updates, rollback):
+
+```powershell
+cp backend/.env.example .env   # at the REPO ROOT, then fill in DOMAIN,
+                               # SECRET_KEY, MYSQL_ROOT_PASSWORD, FRONTEND_ORIGINS
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+With `ENVIRONMENT=production` the app refuses to start on a demo/short
+`SECRET_KEY`, a SQLite database, or a wildcard CORS origin, and
+`seed_demo.py` refuses to run without `--allow-production` — demo accounts
+must never land in a production database. The production compose file,
+Dockerfile and Caddyfile are config-verified only in this repo (no Docker
+here); verify them on the deployment machine first.
+
+## ⚠️ Honesty and Limitations
 
 This is a hackathon-grade build, not a production trading, payments or
 logistics system. The short version:
@@ -390,3 +442,12 @@ logistics system. The short version:
 
 Full details: [LIMITATIONS.md](LIMITATIONS.md). Architecture:
 [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## 👥 Team
+
+Built by **Team Agronexis** — Md. Maruf Hasan Tuhin.
+
+## 📄 License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for
+details.
