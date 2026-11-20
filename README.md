@@ -1,6 +1,7 @@
 # 🌾 FARMMARKET — Fair-Price Market Access for Farmers
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-2E7D32?style=for-the-badge&logo=render&logoColor=white)](https://farmmarket-gdcm.onrender.com)
+[![CI](https://github.com/marufHtuhin/FarmMarket/actions/workflows/ci.yml/badge.svg)](https://github.com/marufHtuhin/FarmMarket/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
@@ -133,6 +134,7 @@ currencies are never mixed.
 ```
 FARMMARKET/
 ├── README.md / ARCHITECTURE.md / LIMITATIONS.md / TEST_REPORT.md
+├── .github/workflows/ci.yml    # GitHub Actions CI (pytest subset + tsc/build/Vitest)
 ├── docker-compose.yml          # MySQL (host :3307) + API (:8000)
 ├── database/schema.sql         # CREATE DATABASE farmmarket_db (utf8mb4)
 ├── docs/                       # API_AND_DEMO, ERD, POSTMAN, knowledge/ (RAG docs)
@@ -364,7 +366,10 @@ cd frontend && npm run build               # tsc --noEmit + vite build
 cd frontend && npm run test:e2e            # Playwright (needs `npm run build` first)
 ```
 
-See [TEST_REPORT.md](TEST_REPORT.md) for the latest run results.
+See [TEST_REPORT.md](TEST_REPORT.md) for the latest run results. GitHub
+Actions runs the backend subset + frontend checks on every push and pull
+request (`.github/workflows/ci.yml`); the full backend suite takes 55–70
+minutes, so it runs locally before a release, not in CI.
 
 ## ⚙️ Environment Variables
 

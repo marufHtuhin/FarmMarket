@@ -1,0 +1,101 @@
+# FarmMarket CI — runs on every push and pull request, on every branch.
+#
+# What it checks (before anything is merged):
+#   - backend:  pytest over the core test files (auth, marketplace,
+#               matching, messaging, prices, admin, assistant, weather,
+#               email, forecasting, Digital Twin, vision)
+#   - frontend: TypeScript check + Vite build + Vitest suite
+#
+# What it does NOT do: deploy. Deployment is Render's job (CD) and only
+# happens on push to `main` (see render.yaml + PAAS_DEPLOY.md).
+#
+# Why a pytest subset and not the full suite: the full backend suite takes
+# 55-70 minutes locally, mostly model-training and audit files. The subset
+# below covers the paths a normal change can break and finishes in minutes.
+# Run the full suite locally before a release: `cd backend && pytest -q`.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A new push to the same branch cancels the previous run for that branch —
+# only the latest commit needs a verdict.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run core test subset
+        # tests/conftest.py points the app at a scratch SQLite DB in a temp
+        # dir and sets SECRET_KEY itself — no MySQL service, no secrets.
+        run: >-
+          python -m pytest -q
+          tests/test_api.py
+          tests/test_foundation.py
+          tests/test_signup.py
+          tests/test_matching.py
+          tests/test_messaging.py
+          tests/test_manual_prices.py
+          tests/test_price_history.py
+          tests/test_admin_stats.py
+          tests/test_assistant_status.py
+          tests/test_weather.py
+          tests/test_email_verification.py
+          tests/test_mailer.py
+          tests/test_mailer_brevo.py
+          tests/test_hardening.py
+          tests/test_sklearn_forecast.py
+          tests/test_twin.py
+          tests/test_twin_qr.py
+          tests/test_vision.py
+
+  frontend:
+    name: Frontend (tsc + build + Vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check and build
+        # `build` is `tsc --noEmit && vite build` — type errors fail the job.
+        run: npm run build
+
+      - name: Run Vitest suite
+        run: npm run test
